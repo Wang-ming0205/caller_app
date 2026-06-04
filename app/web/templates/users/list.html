@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <h2>人員列表</h2>
+    <button onclick="listUsers()">重新整理</button>
+    <table><thead><tr><th>ID</th><th>帳號</th><th>姓名</th><th>權限</th><th>啟用</th></tr></thead><tbody id="users-table"></tbody></table>
+  </div>
+  <div class="card narrow">
+    <h2>新增人員</h2>
+    <label>帳號</label><input id="new_username">
+    <label>密碼</label><input id="new_password" type="password">
+    <label>姓名</label><input id="new_full_name">
+    <label>權限</label><select id="new_role"><option>staff</option><option>manager</option><option>admin</option></select>
+    <button onclick="createUser()">新增</button>
+    <p class="hint">只有 admin 可以新增人員。</p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script>checkLoginStatus(true); listUsers();</script>{% endblock %}

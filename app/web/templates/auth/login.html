@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h2>登入</h2>
+  <label>帳號</label>
+  <input id="username" value="admin" autocomplete="username">
+  <label>密碼</label>
+  <input id="password" type="password" value="admin123" autocomplete="current-password">
+  <button onclick="login()">登入</button>
+  <button class="secondary" onclick="seedData()">建立測試資料 / 預設帳號</button>
+  <p class="hint">測試帳密：admin/admin123、manager/manager123、staff/staff123</p>
+</div>
+{% endblock %}
+{% block scripts %}<script>checkLoginStatus(false);</script>{% endblock %}

@@ -1,0 +1,37 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f7fb; color: #1f2937; }
+a { color: inherit; }
+.sidebar { position: fixed; inset: 0 auto 0 0; width: 230px; background: #111827; color: white; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.brand { font-size: 20px; font-weight: 800; }
+.sidebar nav { display: flex; flex-direction: column; gap: 8px; }
+.sidebar a { text-decoration: none; padding: 10px 12px; border-radius: 10px; color: #e5e7eb; }
+.sidebar a:hover { background: #374151; }
+.main { margin-left: 230px; padding: 24px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+h1 { margin: 0; font-size: 28px; }
+h2 { margin-top: 0; }
+.card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); margin-bottom: 18px; }
+.narrow { max-width: 560px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.row { display: flex; gap: 10px; align-items: center; }
+input, textarea, select { width: 100%; padding: 11px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 16px; margin: 6px 0 14px; background: white; }
+textarea { min-height: 90px; resize: vertical; }
+button, .btn { display: inline-block; border: 0; background: #2563eb; color: white; padding: 11px 16px; border-radius: 10px; font-size: 15px; cursor: pointer; text-decoration: none; }
+button:hover, .btn:hover { filter: brightness(0.95); }
+.secondary { background: #0f766e; }
+.ghost { background: transparent; border: 1px solid #6b7280; }
+table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+th { background: #f9fafb; }
+pre, code { background: #111827; color: #e5e7eb; padding: 10px; border-radius: 10px; overflow-x: auto; display: block; }
+.message { padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; background: #dbeafe; color: #1e3a8a; }
+.message.error { background: #fee2e2; color: #991b1b; }
+.hidden { display: none; }
+.hint { color: #6b7280; font-size: 14px; }
+@media (max-width: 760px) {
+  .sidebar { position: static; width: 100%; }
+  .main { margin-left: 0; padding: 16px; }
+  .topbar { align-items: flex-start; flex-direction: column; }
+  .row { flex-direction: column; align-items: stretch; }
+  table { font-size: 14px; }
+}

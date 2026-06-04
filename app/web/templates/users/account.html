@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h2>帳號設定</h2>
+  <button onclick="loadMe()">讀取目前帳號</button>
+  <pre id="me-result"></pre>
+</div>
+{% endblock %}
+{% block scripts %}<script>checkLoginStatus(true); loadMe();</script>{% endblock %}

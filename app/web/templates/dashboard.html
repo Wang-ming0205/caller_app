@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card"><h2>API 狀態</h2><p>測試：<code>/health</code></p><button onclick="checkHealth()">檢查 API</button><pre id="health-result"></pre></div>
+  <div class="card"><h2>外部裝置連線</h2><p>手機與電腦同 Wi-Fi 後，開：</p><code>http://你的電腦IP:8000/</code><p>外部程式 call API 可用：</p><code>http://你的電腦IP:8000/api/...</code></div>
+  <div class="card"><h2>常用入口</h2><p><a href="/customers">客戶管理</a></p><p><a href="/customers/new">新增客戶</a></p><p><a href="/transactions">新增消費</a></p><p><a href="/docs" target="_blank">Swagger API 文件</a></p></div>
+</div>
+{% endblock %}
+{% block scripts %}<script>checkLoginStatus(false);</script>{% endblock %}
