@@ -9,6 +9,7 @@ from app.models.customer import Customer
 from app.models.transaction import Transaction, TransactionItem
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerOut, CustomerSummaryOut, CustomerUpdate
+from app.api import crud
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -57,6 +58,17 @@ def search_customers(
     stmt = stmt.order_by(Customer.id.desc()).limit(20)
     return list(db.execute(stmt).scalars().all())
 
+
+#新增curd.py
+@router.get("/debug/test")
+def test():
+    return {"message":"curd loaded"}
+
+@router.get("/")
+def list_customers(
+    db: Session = Depends(get_db)
+):
+    return crud.get_latest_customers(db)
 
 @router.get("/by-phone/{phone_number}", response_model=CustomerOut)
 def get_customer_by_phone(
@@ -144,3 +156,4 @@ def get_customer_summary(
         total_amount=Decimal(total_amount),
         last_day=last_day,
     )
+

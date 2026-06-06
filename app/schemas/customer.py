@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 from pydantic import BaseModel
+from typing import Optional
 
 class CustomerBase(BaseModel):
     name: str
