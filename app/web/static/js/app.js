@@ -17,17 +17,110 @@ function clearMessage() {
 }
 
 async function api(path, options = {}) {
-  const headers = {"Content-Type": "application/json", ...(options.headers || {})};
-  if (token()) headers.Authorization = `Bearer ${token()}`;
-  const res = await fetch(`${API_PREFIX}${path}`, {...options, headers});
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-  if (!res.ok) {
-    const detail = data && data.detail ? data.detail : `HTTP ${res.status}`;
-    throw new Error(detail);
+  showLoading();
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
+    if (token()) headers.Authorization = `Bearer ${token()}`;
+
+    const res = await fetch(`${API_PREFIX}${path}`, {
+      ...options,
+      headers,
+    });
+
+    const text = await res.text();
+
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+
+    if (!res.ok) {
+      const detail = data && data.detail ? data.detail : `HTTP ${res.status}`;
+      throw new Error(detail);
+    }
+
+    return data;
+  } finally {
+    await new Promise(resolve =>
+      setTimeout(resolve , 1000)
+  );
+    hideLoading();
   }
-  return data;
+}
+
+function hasSwal() {
+  return typeof Swal !== "undefined";
+}
+
+function showLoading(title = "讀取中...") {
+  if (!hasSwal()) return;
+
+  Swal.fire({
+    title,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+}
+
+function hideLoading() {
+  if (!hasSwal()) return;
+  Swal.close();
+}
+
+async function showSuccess(title, text = "") {
+  if (hasSwal()) {
+    await Swal.fire({
+      icon: "success",
+      title,
+      text,
+      timer: 1200,
+      showConfirmButton: false,
+    });
+  } else {
+    setMessage(text ? `${title}：${text}` : title);
+  }
+}
+
+function showError(title, err) {
+  const text = err?.message || String(err);
+
+  if (hasSwal()) {
+    Swal.fire({
+      icon: "error",
+      title,
+      text,
+    });
+  } else {
+    setMessage(`${title}：${text}`, true);
+  }
+}
+
+async function confirmAction(title, text = "此操作無法復原") {
+  if (hasSwal()) {
+    const result = await Swal.fire({
+      title,
+      text,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "確定",
+      cancelButtonText: "取消",
+    });
+
+    return result.isConfirmed;
+  }
+
+  return confirm(title);
 }
 
 async function checkLoginStatus(redirectWhenMissing = false) {
@@ -92,50 +185,6 @@ async function checkHealth() {
   }
 }
 
-// async function createCustomer() {
-//   clearMessage();
-//   try {
-//     const payload = {
-//       name: document.getElementById("name").value,
-//       phone_number: document.getElementById("phone_number").value,
-//       gender: document.getElementById("gender").value || null,
-//       birthday: document.getElementById("birthday").value || null,
-//       note: document.getElementById("note").value || null,
-//     };
-//     const data = await api("/customers", {method: "POST", body: JSON.stringify(payload)});
-//     setMessage(`新增成功：${data.name} / ID ${data.id}`);
-//   } catch (err) {
-//     setMessage(`新增失敗：${err.message}`, true);
-//   }
-// }
-
-// async function searchCustomers() {
-//   clearMessage();
-//   const tbody = document.getElementById("customer-table");
-//   tbody.innerHTML = "";
-//   try {
-//     const q = encodeURIComponent(document.getElementById("q").value.trim());
-//     const data = await api(`/customers/search/list?q=${q}`);
-//     for (const c of data) {
-//       const tr = document.createElement("tr");
-//       tr.innerHTML = `<td>${c.id}</td><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone_number)}</td><td>${escapeHtml(c.gender || "")}</td><td>${escapeHtml(c.note || "")}</td><td><button onclick="customerSummary(${c.id})">摘要</button></td>`;
-//       tbody.appendChild(tr);
-//     }
-//   } catch (err) {
-//     setMessage(`查詢失敗：${err.message}`, true);
-//   }
-// }
-
-// async function customerSummary(id) {
-//   const el = document.getElementById("summary-result");
-//   try {
-//     const data = await api(`/customers/${id}/summary`);
-//     el.textContent = JSON.stringify(data, null, 2);
-//   } catch (err) {
-//     el.textContent = err.message;
-//   }
-// }
-
 async function initHome() {
   const ok = await checkLoginStatus(true);
   if (ok) {
@@ -160,12 +209,12 @@ async function createCustomer() {
       body: JSON.stringify(payload),
     });
 
-    setMessage(`新增成功：${data.name} / ID ${data.id}`);
+    await showSuccess('新增成功',`${data.name} / ID ${data.id}`);
     clearCustomerForm();
     loadLatestCustomers();
 
   } catch (err) {
-    setMessage(`新增失敗：${err.message}`, true);
+    showError("新增失敗",err);
   }
 }
 
@@ -249,31 +298,32 @@ async function updateCustomer(id) {
       body: JSON.stringify(payload),
     });
 
-    setMessage(`修改成功：${data.name}`);
+    await showSuccess("修改成功",data.name);
     loadLatestCustomers();
 
   } catch (err) {
-    setMessage(`修改失敗：${err.message}`, true);
+    showError("修改失敗", err);
   }
 }
 
 async function deleteCustomer(id) {
   clearMessage();
 
-  if (!confirm("確定要刪除這位客戶？")) return;
+    const ok = await confirmAction("確定刪除？");
+    if (!ok) return;
 
-  try {
-    await api(`/customers/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      await api(`/customers/${id}`, {
+        method: "DELETE",
+      });
 
-    setMessage("刪除成功");
-    loadLatestCustomers();
+      await showSuccess("刪除成功");
+      loadLatestCustomers();
 
-  } catch (err) {
-    setMessage(`刪除失敗：${err.message}`, true);
+    } catch (err) {
+      showError("刪除失敗", err);
+    }
   }
-}
 
 async function customerSummary(id) {
   const el = document.getElementById("summary-result");
@@ -374,3 +424,43 @@ async function loadMe() {
 function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#039;","\"":"&quot;"}[ch]));
 }
+
+async function changeMyPassword() {
+  clearMessage();
+
+  const oldPassword = document.getElementById("old_password").value;
+  const newPassword = document.getElementById("new_password").value;
+  const confirmPassword = document.getElementById("confirm_password").value;
+
+  if (!oldPassword || !newPassword || !confirmPassword) {
+    showError("欄位未完成", "請完整輸入所有密碼欄位");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showError("密碼不一致", "新密碼與確認新密碼不一致");
+    return;
+  }
+
+  try {
+    await api("/users/me/password", {
+      method: "PUT",
+      body: JSON.stringify({
+        old_password: oldPassword,
+        new_password: newPassword,
+      }),
+    });
+
+    await showSuccess("密碼修改成功，請重新登入");
+    localStorage.removeItem("access_token");
+
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 800);
+
+  } catch (err) {
+    showError("密碼修改失敗",err);
+  }
+}
+
+

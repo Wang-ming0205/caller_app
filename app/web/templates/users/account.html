@@ -5,5 +5,17 @@
   <button onclick="loadMe()">讀取目前帳號</button>
   <pre id="me-result"></pre>
 </div>
+
+
+<div class="card narrow">
+  <h2>修改密碼</h2>
+
+  <input id="old_password" type="password" placeholder="目前密碼">
+  <input id="new_password" type="password" placeholder="新密碼">
+  <input id="confirm_password" type="password" placeholder="確認新密碼">
+
+  <button onclick="changeMyPassword()">修改密碼</button>
+</div>
+
 {% endblock %}
 {% block scripts %}<script>checkLoginStatus(true); loadMe();</script>{% endblock %}
