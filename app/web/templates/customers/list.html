@@ -1,19 +1,38 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="card">
   <h2>客戶查詢</h2>
+
   <div class="row">
     <input id="q" placeholder="輸入姓名或手機" onkeydown="if(event.key==='Enter') searchCustomers()">
     <button onclick="searchCustomers()">查詢</button>
+    <button onclick="loadLatestCustomers()">最新五筆</button>
   </div>
+
   <table>
-    <thead><tr><th>ID</th><th>姓名</th><th>手機</th><th>性別</th><th>備註</th><th>操作</th></tr></thead>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>姓名</th>
+        <th>手機</th>
+        <th>性別</th>
+        <th>備註</th>
+        <th>操作</th>
+      </tr>
+    </thead>
     <tbody id="customer-table"></tbody>
   </table>
 </div>
+
 <div class="card">
   <h2>會員摘要</h2>
   <pre id="summary-result">點「摘要」查看最近消費與總金額。</pre>
 </div>
 {% endblock %}
-{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
+
+{% block scripts %}
+<script>
+  initHome();
+</script>
+{% endblock %}

@@ -92,42 +92,193 @@ async function checkHealth() {
   }
 }
 
+// async function createCustomer() {
+//   clearMessage();
+//   try {
+//     const payload = {
+//       name: document.getElementById("name").value,
+//       phone_number: document.getElementById("phone_number").value,
+//       gender: document.getElementById("gender").value || null,
+//       birthday: document.getElementById("birthday").value || null,
+//       note: document.getElementById("note").value || null,
+//     };
+//     const data = await api("/customers", {method: "POST", body: JSON.stringify(payload)});
+//     setMessage(`新增成功：${data.name} / ID ${data.id}`);
+//   } catch (err) {
+//     setMessage(`新增失敗：${err.message}`, true);
+//   }
+// }
+
+// async function searchCustomers() {
+//   clearMessage();
+//   const tbody = document.getElementById("customer-table");
+//   tbody.innerHTML = "";
+//   try {
+//     const q = encodeURIComponent(document.getElementById("q").value.trim());
+//     const data = await api(`/customers/search/list?q=${q}`);
+//     for (const c of data) {
+//       const tr = document.createElement("tr");
+//       tr.innerHTML = `<td>${c.id}</td><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone_number)}</td><td>${escapeHtml(c.gender || "")}</td><td>${escapeHtml(c.note || "")}</td><td><button onclick="customerSummary(${c.id})">摘要</button></td>`;
+//       tbody.appendChild(tr);
+//     }
+//   } catch (err) {
+//     setMessage(`查詢失敗：${err.message}`, true);
+//   }
+// }
+
+// async function customerSummary(id) {
+//   const el = document.getElementById("summary-result");
+//   try {
+//     const data = await api(`/customers/${id}/summary`);
+//     el.textContent = JSON.stringify(data, null, 2);
+//   } catch (err) {
+//     el.textContent = err.message;
+//   }
+// }
+
+async function initHome() {
+  const ok = await checkLoginStatus(true);
+  if (ok) {
+    loadLatestCustomers();
+  }
+}
+
 async function createCustomer() {
   clearMessage();
+
   try {
     const payload = {
-      name: document.getElementById("name").value,
-      phone_number: document.getElementById("phone_number").value,
+      name: document.getElementById("name").value.trim(),
+      phone_number: document.getElementById("phone_number").value.trim(),
       gender: document.getElementById("gender").value || null,
       birthday: document.getElementById("birthday").value || null,
       note: document.getElementById("note").value || null,
     };
-    const data = await api("/customers", {method: "POST", body: JSON.stringify(payload)});
+
+    const data = await api("/customers", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
     setMessage(`新增成功：${data.name} / ID ${data.id}`);
+    clearCustomerForm();
+    loadLatestCustomers();
+
   } catch (err) {
     setMessage(`新增失敗：${err.message}`, true);
   }
 }
 
+async function loadLatestCustomers() {
+  clearMessage();
+
+  const tbody = document.getElementById("customer-table");
+  if (!tbody) return;
+
+  try {
+    const data = await api("/customers/");
+    renderCustomerTable(data);
+  } catch (err) {
+    setMessage(`讀取最新客戶失敗：${err.message}`, true);
+  }
+}
+
 async function searchCustomers() {
   clearMessage();
-  const tbody = document.getElementById("customer-table");
-  tbody.innerHTML = "";
+
+  const q = document.getElementById("q").value.trim();
+
+  if (!q) {
+    loadLatestCustomers();
+    return;
+  }
+
   try {
-    const q = encodeURIComponent(document.getElementById("q").value.trim());
-    const data = await api(`/customers/search/list?q=${q}`);
-    for (const c of data) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${c.id}</td><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone_number)}</td><td>${escapeHtml(c.gender || "")}</td><td>${escapeHtml(c.note || "")}</td><td><button onclick="customerSummary(${c.id})">摘要</button></td>`;
-      tbody.appendChild(tr);
-    }
+    const data = await api(`/customers/search/list?q=${encodeURIComponent(q)}`);
+    renderCustomerTable(data);
   } catch (err) {
     setMessage(`查詢失敗：${err.message}`, true);
   }
 }
 
+function renderCustomerTable(customers) {
+  const tbody = document.getElementById("customer-table");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  for (const c of customers) {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${c.id}</td>
+      <td><input id="name-${c.id}" value="${escapeHtml(c.name)}"></td>
+      <td><input id="phone-${c.id}" value="${escapeHtml(c.phone_number)}"></td>
+      <td>
+        <select id="gender-${c.id}">
+          <option value="" ${!c.gender ? "selected" : ""}>未填</option>
+          <option value="男" ${c.gender === "男" ? "selected" : ""}>男</option>
+          <option value="女" ${c.gender === "女" ? "selected" : ""}>女</option>
+        </select>
+      </td>
+      <td><input id="note-${c.id}" value="${escapeHtml(c.note || "")}"></td>
+      <td>
+        <button onclick="updateCustomer(${c.id})">儲存</button>
+        <button onclick="customerSummary(${c.id})">摘要</button>
+        <button onclick="deleteCustomer(${c.id})">刪除</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+}
+
+async function updateCustomer(id) {
+  clearMessage();
+
+  try {
+    const payload = {
+      name: document.getElementById(`name-${id}`).value.trim(),
+      phone_number: document.getElementById(`phone-${id}`).value.trim(),
+      gender: document.getElementById(`gender-${id}`).value || null,
+      note: document.getElementById(`note-${id}`).value || null,
+    };
+
+    const data = await api(`/customers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+
+    setMessage(`修改成功：${data.name}`);
+    loadLatestCustomers();
+
+  } catch (err) {
+    setMessage(`修改失敗：${err.message}`, true);
+  }
+}
+
+async function deleteCustomer(id) {
+  clearMessage();
+
+  if (!confirm("確定要刪除這位客戶？")) return;
+
+  try {
+    await api(`/customers/${id}`, {
+      method: "DELETE",
+    });
+
+    setMessage("刪除成功");
+    loadLatestCustomers();
+
+  } catch (err) {
+    setMessage(`刪除失敗：${err.message}`, true);
+  }
+}
+
 async function customerSummary(id) {
   const el = document.getElementById("summary-result");
+  if (!el) return;
+
   try {
     const data = await api(`/customers/${id}/summary`);
     el.textContent = JSON.stringify(data, null, 2);
@@ -135,6 +286,15 @@ async function customerSummary(id) {
     el.textContent = err.message;
   }
 }
+
+function clearCustomerForm() {
+  document.getElementById("name").value = "";
+  document.getElementById("phone_number").value = "";
+  document.getElementById("gender").value = "";
+  document.getElementById("birthday").value = "";
+  document.getElementById("note").value = "";
+}
+
 
 async function createTransaction() {
   clearMessage();

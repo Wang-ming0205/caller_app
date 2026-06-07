@@ -83,6 +83,19 @@ def get_customer_by_phone(
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer
 
+@router.delete("/{customer_id}")
+def delete_customer(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("admin", "manager", "staff")),
+):
+    customer = db.get(Customer, customer_id)
+    customer = require_customer_access(customer, current_user)
+
+    db.delete(customer)
+    db.commit()
+
+    return {"message": "Customer deleted", "id": customer_id}
 
 @router.get("/{customer_id}", response_model=CustomerOut)
 def get_customer(

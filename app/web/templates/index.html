@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="card">
+  <h2>新增客戶</h2>
+  <input id="name" placeholder="姓名">
+  <input id="phone_number" placeholder="手機">
+  <select id="gender">
+    <option value="">性別</option>
+    <option value="男">男</option>
+    <option value="女">女</option>
+  </select>
+  <input id="birthday" type="date">
+  <input id="note" placeholder="備註">
+  <button onclick="createCustomer()">新增</button>
+</section>
+
+<section class="card">
+  <h2>搜尋客戶</h2>
+  <input id="q" placeholder="輸入姓名或手機">
+  <button onclick="searchCustomers()">搜尋</button>
+  <button onclick="loadLatestCustomers()">最新客戶</button>
+</section>
+
+<section class="card">
+  <h2>客戶列表</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>姓名</th>
+        <th>手機</th>
+        <th>性別</th>
+        <th>備註</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="customer-table"></tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>客戶摘要</h2>
+  <pre id="summary-result"></pre>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  initHome();
+</script>
+{% endblock %}
