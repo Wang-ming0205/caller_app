@@ -1,9 +1,5 @@
 const API_PREFIX = "/api";
 
-function token() {
-  return localStorage.getItem("access_token");
-}
-
 function setMessage(text, isError = false) {
   const el = document.getElementById("message");
   if (!el) return;
@@ -17,7 +13,9 @@ function clearMessage() {
 }
 
 async function api(path, options = {}) {
+  if(options.showLoading !== false){
   showLoading();
+  }
 
   try {
     const headers = {
@@ -25,8 +23,12 @@ async function api(path, options = {}) {
       ...(options.headers || {}),
     };
 
-    if (token()) headers.Authorization = `Bearer ${token()}`;
+    const currentToken = localStorage.getItem("access_token");
 
+    if (currentToken){
+      headers.Authorization = `Bearer ${currentToken}`;
+    }
+  
     const res = await fetch(`${API_PREFIX}${path}`, {
       ...options,
       headers,
@@ -48,10 +50,11 @@ async function api(path, options = {}) {
 
     return data;
   } finally {
+    if(options.showLoading !== false){
     await new Promise(resolve =>
-      setTimeout(resolve , 1000)
-  );
+      setTimeout(resolve , 1000));
     hideLoading();
+    }
   }
 }
 
@@ -123,21 +126,46 @@ async function confirmAction(title, text = "此操作無法復原") {
   return confirm(title);
 }
 
-async function checkLoginStatus(redirectWhenMissing = false) {
+//登入登出
+async function checkLoginStatus(redirectWhenMissing = true) {
   const el = document.getElementById("login-status");
-  if (!token()) {
+  const currentToken = localStorage.getItem("access_token");
+
+  if (!currentToken) {
     if (el) el.textContent = "尚未登入";
-    if (redirectWhenMissing) window.location.href = "/login";
+    updateAuthButton(false);
+
+    if (redirectWhenMissing) {
+      window.location.href = "/login";
+    }
+
     return false;
   }
+
   try {
-    const me = await api("/auth/me");
-    if (el) el.textContent = `已登入：${me.username}（${me.role}）`;
+    const me = await api("/auth/me", { showLoading: false });
+
+    if (el) {
+      el.textContent = `已登入：${me.username}（${me.role}）`;
+    }
+
+    updateAuthButton(true);
+
     return true;
+
   } catch (err) {
     localStorage.removeItem("access_token");
-    if (el) el.textContent = "登入已失效";
-    if (redirectWhenMissing) window.location.href = "/login";
+
+    if (el) {
+      el.textContent = "登入已失效";
+    }
+
+    updateAuthButton(false);
+
+    if (redirectWhenMissing) {
+      window.location.href = "/login";
+    }
+
     return false;
   }
 }
@@ -463,4 +491,24 @@ async function changeMyPassword() {
   }
 }
 
+//登入登出
+function updateAuthButton(isLogin) {
+  const btn = document.getElementById("auth-btn");
+  if (!btn) return;
 
+  if (isLogin) {
+    btn.textContent = "登出";
+  } else {
+    btn.textContent = "登入";
+  }
+}
+
+function handleAuthButton() {
+  const token = localStorage.getItem("access_token");
+
+  if (token) {
+    logout();
+  } else {
+    window.location.href = "/login";
+  }
+}
