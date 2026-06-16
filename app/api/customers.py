@@ -10,6 +10,7 @@ from app.models.transaction import Transaction, TransactionItem
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerOut, CustomerSummaryOut, CustomerUpdate
 from app.api import crud
+from app.api.audit import write_audit_log
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -41,6 +42,18 @@ def create_customer(
     db.add(customer)
     db.commit()
     db.refresh(customer)
+
+    write_audit_log(
+        db=db,
+        action="CREATE_CUSTOMER",
+        target_type="customer",
+        user_id=current_user.id,
+        target_id=customer.id,
+        detail={
+            "name": customer.name,
+            "phone_number": customer.phone_number,
+        },
+    )
     return customer
 
 
@@ -64,11 +77,15 @@ def search_customers(
 def test():
     return {"message":"curd loaded"}
 
-@router.get("/")
+@router.get("/", response_model=list[CustomerOut])
 def list_customers(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return crud.get_latest_customers(db)
+    stmt = select(Customer)
+    stmt = customer_scope(stmt, current_user)
+    stmt = stmt.order_by(Customer.id.desc()).limit(5)
+    return list(db.execute(stmt).scalars().all())
 
 @router.get("/by-phone/{phone_number}", response_model=CustomerOut)
 def get_customer_by_phone(
@@ -92,9 +109,23 @@ def delete_customer(
     customer = db.get(Customer, customer_id)
     customer = require_customer_access(customer, current_user)
 
+    detail = {
+        "name":customer.name,
+        "phone_number":customer.phone_number,
+    }
+
     db.delete(customer)
     db.commit()
 
+    write_audit_log(
+        db=db,
+        action="DELETE_CUSTOMER",
+        target_type="customer",
+        user_id=current_user.id,
+        target_id=customer_id,
+        detail=detail,
+)
+    
     return {"message": "Customer deleted", "id": customer_id}
 
 @router.get("/{customer_id}", response_model=CustomerOut)
@@ -123,6 +154,18 @@ def update_customer(
 
     db.commit()
     db.refresh(customer)
+
+    write_audit_log(
+        db=db,
+        action="UPDATE_CUSTOMER",
+        target_type="customer",
+        user_id=current_user.id,
+        target_id=customer.id,
+        detail={
+            "name": customer.name,
+            "phone_number": customer.phone_number,
+        },
+    )
     return customer
 
 

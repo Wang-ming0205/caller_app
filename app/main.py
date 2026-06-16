@@ -25,20 +25,12 @@ app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 # HTML pages
 app.include_router(pages.router)
 
-# API routes
-app.include_router(setup.router)
-app.include_router(auth.router)
-app.include_router(customers.router)
-app.include_router(transactions.router)
-app.include_router(users.router)
-
-# API routes with /api prefix
+# API routes with api prefix 
 app.include_router(setup.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(customers.router, prefix="/api")
 app.include_router(transactions.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
-
 
 @app.get("/health", tags=["system"])
 def health():
