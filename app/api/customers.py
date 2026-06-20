@@ -3,6 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
+#新增匯出csv
+import csv
+from io import StringIO
+from fastapi.responses import StreamingResponse
+
 from app.api.deps import get_current_user, require_roles, require_customer_access
 from app.core.database import get_db
 from app.models.customer import Customer
@@ -87,6 +92,8 @@ def list_customers(
     stmt = stmt.order_by(Customer.id.desc()).limit(5)
     return list(db.execute(stmt).scalars().all())
 
+
+
 @router.get("/by-phone/{phone_number}", response_model=CustomerOut)
 def get_customer_by_phone(
     phone_number: str,
@@ -99,6 +106,46 @@ def get_customer_by_phone(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer
+
+#這個是?新增的匯出csv#
+@router.get("/export/csv")
+def export_customers_csv(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("admin", "manager", "staff")),
+):
+    stmt = select(Customer)
+    stmt = customer_scope(stmt, current_user)
+    customers = db.execute(stmt).scalars().all()
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "id",
+        "name",
+        "phone",
+        "note",
+        "owner_user_id",
+    ])
+
+    for c in customers:
+        writer.writerow([
+            c.id,
+            c.name,
+            c.phone_number,
+            c.note or "",
+            c.owner_user_id,
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=customers.csv"
+        },
+    )
 
 @router.delete("/{customer_id}")
 def delete_customer(

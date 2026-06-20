@@ -512,3 +512,37 @@ function handleAuthButton() {
     window.location.href = "/login";
   }
 }
+
+//新增csv功能
+async function exportCustomersCsv() {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    Swal.fire("請先登入", "", "warning");
+    return;
+  }
+
+  const res = await fetch("/api/customers/export/csv", {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    Swal.fire("匯出失敗", "請確認權限或重新登入", "error");
+    return;
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "customers.csv";
+  document.body.appendChild(a);
+  a.click();
+
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
