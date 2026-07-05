@@ -14,7 +14,7 @@ from app.models.customer import Customer
 from app.models.transaction import Transaction, TransactionItem
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerOut, CustomerSummaryOut, CustomerUpdate
-from app.api import crud
+from app.services import customer_service
 from app.api.audit import write_audit_log
 
 router = APIRouter(prefix="/customers", tags=["customers"])
