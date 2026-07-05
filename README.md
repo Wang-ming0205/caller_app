@@ -1,142 +1,160 @@
-# Barbershop CRM：API + HTML + 外部裝置可連版本
+# Caller App
 
-這版包含：
+> 🚧 持續開發中（Work in Progress）
 
-- FastAPI API：`/api/...`
-- Swagger API 文件：`/docs`
-- HTML 頁面：`app/web/templates/`
-- CSS / JS：`app/web/static/`
-- 同 Wi-Fi 手機 / 其他電腦可連：`host=0.0.0.0`
-- 健康檢查：`/health`
+## 專案介紹
 
-## 1. 啟動
+這個專案是我利用工作之餘持續開發的 FastAPI 個人作品。
 
-Windows：
+最初以 理髮店 為發想，目前逐步重構為可擴充的客戶管理系統，並持續導入 Service Layer、權限管理、PostgreSQL、Render 部署、測試與其他工程實務。
 
-```bat
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-python run.py
+一套使用 **FastAPI** 開發的客戶管理系統（CRM）。
+- 🌐 Website：
+  https://caller-app-norr.onrender.com
+
+- 📖 Swagger：
+  https://caller-app-norr.onrender.com/docs
+
+目前包含：
+## 功能特色
+
+- JWT 身分驗證
+- 權限管理（Admin / Manager / Staff）
+- Customer CRUD
+- Transaction CRUD
+- RESTful API
+- HTML + Bootstrap 前端
+- PostgreSQL / SQLite
+- Render 部署
+---
+
+
+# 使用技術（Tech Stack）
+
+### Backend
+- Python
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- JWT Authentication
+
+### Frontend
+- HTML
+- Bootstrap
+- JavaScript
+
+### Database
+- PostgreSQL
+- SQLite
+
+### Deployment
+- Render
+
+---
+# 專案架構
+```
+caller_app/
+│
+├── app/
+│   ├── api/          # API Router
+│   ├── core/         # 設定、資料庫、安全性
+│   ├── models/       # SQLAlchemy Model
+│   ├── schemas/      # Pydantic Schema
+│   ├── services/     # 商業邏輯 (Business Logic)
+│   ├── utils/        # 共用工具
+│   └── web/          # HTML / CSS / JavaScript
+│
+├── docs/             # 專案文件
+├── scripts/          # 維護工具(seed、匯入等等)
+├── tests/            # pytest(單元測試)
+│
+├── README.md
+└── run.py
 ```
 
-Mac / Linux：
-
+---
+# 快速開始
+建立虛擬環境
 ```bash
-python3 -m venv .venv
+python -m venv .venv
+```
+
+Windows
+```bash
+.venv\Scripts\activate
+```
+
+Linux / macOS
+```bash
 source .venv/bin/activate
+```
+安裝套件
+```bash
 pip install -r requirements.txt
-cp .env.example .env
+```
+啟動
+```bash
 python run.py
 ```
 
-## 2. 本機開網站
+---
+# 預設帳號
 
-```txt
-http://127.0.0.1:8000/
+| 帳號 | 密碼 | 權限 |
+|------|------|------|
+| admin | admin123 | Admin |
+| manager | manager123 | Manager |
+| staff | staff123 | Staff |
+---
+
+# API 範例
+登入
 ```
-
-## 3. 手機或另一台電腦開網站
-
-手機與電腦要連同一個 Wi-Fi。先查你電腦 IP，例如：
-
-```bat
-ipconfig
-```
-
-找到 IPv4，例如：
-
-```txt
-192.168.1.23
-```
-
-手機開：
-
-```txt
-http://192.168.1.23:8000/
-```
-
-API 文件：
-
-```txt
-http://192.168.1.23:8000/docs
-```
-
-健康檢查：
-
-```txt
-http://192.168.1.23:8000/health
-```
-
-## 4. Windows 防火牆
-
-如果手機打不開，通常是防火牆擋 8000 port。
-用系統管理員 PowerShell 執行：
-
-```powershell
-New-NetFirewallRule -DisplayName "FastAPI 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow
-```
-
-## 5. 測試帳號
-
-先到登入頁按「建立測試資料 / 預設帳號」，或呼叫：
-
-```txt
-POST /api/setup/seed
-```
-
-預設帳密：
-
-```txt
-admin / admin123
-manager / manager123
-staff / staff123
-```
-
-## 6. API 路由
-
-建議外部 call 使用 `/api` 前綴：
-
-```txt
 POST /api/auth/login
 GET  /api/auth/me
-POST /api/customers
-GET  /api/customers/search/list?q=王
-GET  /api/customers/{id}/summary
+```
+客戶
+```
+GET    /api/customers
+POST   /api/customers
+PUT    /api/customers/{id}
+DELETE /api/customers/{id}
+```
+
+交易
+```
 POST /api/transactions
-GET  /api/transactions/customer/{customer_id}
-GET  /api/users
-POST /api/users
-GET  /api/users/me
+GET  /api/transactions/customer/{id}
 ```
 
-舊版無 `/api` 前綴的路由也保留，避免原本測試壞掉。
-
-## 7. 目錄結構
-
-```txt
-app/
-├── api/                 # JSON API
-├── core/                # 設定、DB、安全
-├── models/              # SQLAlchemy models
-├── schemas/             # Pydantic schemas
-├── web/
-│   ├── pages.py         # HTML page routes
-│   ├── templates/       # Jinja2 HTML templates
-│   └── static/          # CSS / JS
-└── main.py
+---
+# 系統架構
+```
+Browser / API Client
+        │
+        ▼
+API Router
+        │
+        ▼
+Service Layer
+        │
+        ▼
+SQLAlchemy Model
+        │
+        ▼
+PostgreSQL / SQLite
 ```
 
-## 8. 上線注意
+---
+# 後續規劃（Roadmap）
+- [ ] pytest 單元測試
+- [ ] Alembic Migration
+- [ ] Docker
+- [ ] GitHub Actions (CI/CD)
+- [ ] Dashboard
+- [ ] Excel / CSV 匯入匯出
+- [ ] 多店家（Multi Tenant）
+- [ ] Audit Log
 
-正式上線前，請修改 `.env`：
-
-```txt
-ENV=prod
-SECRET_KEY=換成很長很亂的字串
-ENABLE_SEED=false
-RELOAD=false
-```
-
-SQLite 可以測試；正式多人使用建議換 PostgreSQL。
+## 開發紀錄
+本專案採用 Git 進行版本控制，持續透過 Commit 紀錄功能新增、重構與架構調整，並同步部署至 Render。
