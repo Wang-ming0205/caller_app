@@ -158,3 +158,9 @@ PostgreSQL / SQLite
 
 ## 開發紀錄
 本專案採用 Git 進行版本控制，持續透過 Commit 紀錄功能新增、重構與架構調整，並同步部署至 Render。
+
+
+## Documentation(文件)
+
+See the `docs/` directory for deployment notes, PostgreSQL setup, testing guides, and other development documentation.
+## (詳細文件請參考 docs/ 資料夾)
