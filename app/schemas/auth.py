@@ -17,3 +17,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserMe
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
