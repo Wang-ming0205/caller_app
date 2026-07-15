@@ -10,10 +10,10 @@
 
 一套使用 **FastAPI** 開發的客戶管理系統（CRM）。
 - 🌐 Website：
-  https://caller-app-norr.onrender.com
+  <https://caller-app-norr.onrender.com>
 
 - 📖 Swagger：
-  https://caller-app-norr.onrender.com/docs
+  <https://caller-app-norr.onrender.com/docs>
 
 目前包含：
 ## 功能特色
@@ -147,20 +147,67 @@ PostgreSQL / SQLite
 
 ---
 # 後續規劃（Roadmap）
-- [ ] pytest 單元測試
+- [x] Basic pytest API tests
+- [ ] Increase test coverage
 - [ ] Alembic Migration
 - [ ] Docker
 - [ ] GitHub Actions (CI/CD)
 - [ ] Dashboard
 - [ ] Excel / CSV 匯入匯出
 - [ ] 多店家（Multi Tenant）
-- [ ] Audit Log
+- [x] Audit Log
 
 ## 開發紀錄
 本專案採用 Git 進行版本控制，持續透過 Commit 紀錄功能新增、重構與架構調整，並同步部署至 Render。
 
 
 ## Documentation(文件)
+See the `docs/` directory for deployment notes,
+PostgreSQL setup,
+testing guides,
+and other development documentation.
 
-See the `docs/` directory for deployment notes, PostgreSQL setup, testing guides, and other development documentation.
-## (詳細文件請參考 docs/ 資料夾)
+詳細文件請參考 `docs/` 資料夾。
+
+
+''' 
+## Project Structure
+
+```text
+caller_app/
+│
+├── app/
+│   Main FastAPI application.
+│   主要 FastAPI 應用程式。
+│
+├── docs/
+│   Additional documentation and deployment guides.
+│   放置部署、測試及其他開發文件。
+│
+├── scripts/
+│   Development and maintenance scripts.
+│   放置開發及維護工具，例如建立測試資料、清除資料。
+│
+├── tests/
+│   API test cases using pytest.
+│   使用 pytest 撰寫 API 測試案例，可作為 API 功能範例閱讀。
+│
+├── static/
+│   Static resources.
+│   靜態資源（CSS、JavaScript、圖片）。
+│
+├── templates/
+│   HTML templates.
+│   HTML 頁面模板。
+│
+├── requirements.txt
+│   Python dependencies.
+│   Python 套件需求。
+│
+├── run.py
+│   Application entry point.
+│   專案啟動入口。
+│
+└── README.md
+    Project overview and usage guide.
+    專案說明與使用指南。

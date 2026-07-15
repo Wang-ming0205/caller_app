@@ -1,29 +1,7 @@
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-client = TestClient(app)
-
-
-def login(username="admin", password="admin111"):
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "username": username,
-            "password": password,
-        },
-    )
-
-    assert response.status_code == 200
-    return response.json()["access_token"]
-
-
-def test_change_password_wrong_old_password():
-    token = login()
-
+def test_change_password_wrong_old_password(client, auth_headers):
     response = client.put(
         "/api/auth/me/password",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=auth_headers,
         json={
             "old_password": "wrong_password",
             "new_password": "newpassword123",
@@ -31,4 +9,7 @@ def test_change_password_wrong_old_password():
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Old password is incorrect"
+
+    data = response.json()
+
+    assert data["detail"] == "Old password is incorrect"

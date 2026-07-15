@@ -1,14 +1,24 @@
 from datetime import date, datetime
 from decimal import Decimal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 class CustomerBase(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
     phone_number: str
     gender: str | None = None
     birthday: date | None = None
     note: str | None = None
+    
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Name cannot be empty")
+
+        return value
 
 class CustomerCreate(CustomerBase):
     pass
