@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="card narrow">
+  <h2>新增消費項目</h2>
+  <p class="hint">項目是共用清單，不需要客戶 ID。建立後可在新增消費紀錄時選用。</p>
+  <label>項目名稱</label><input id="catalog_item_name" placeholder="例如：剪髮、九折活動">
+  <label>預設價格</label><input id="catalog_item_price" type="number" value="0" min="0">
+  <label>說明</label><textarea id="catalog_item_description" placeholder="選填"></textarea>
+  <button onclick="createCatalogItem()">新增項目</button>
+</div>
 <div class="card">
-  <h2>消費項目</h2>
-  <p>目前項目直接由新增消費時輸入。正式版可以再加一張 item 資料表。</p>
+  <h2>消費項目清單</h2>
   <table>
-    <thead><tr><th>項目</th><th>參考價格</th></tr></thead>
-    <tbody>
-      <tr><td>剪髮</td><td>500</td></tr>
-      <tr><td>洗髮</td><td>200</td></tr>
-      <tr><td>染髮</td><td>1200</td></tr>
-      <tr><td>燙髮</td><td>1800</td></tr>
-    </tbody>
+    <thead><tr><th>ID</th><th>項目</th><th>預設價格</th><th>說明</th></tr></thead>
+    <tbody id="catalog-items-table"></tbody>
   </table>
 </div>
 {% endblock %}
-{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
+{% block scripts %}<script>initItemsPage();</script>{% endblock %}

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.api import auth, customers, transactions, setup, users
+from app.api import auth, customers, items, transactions, setup, users
 from app.web import pages
 
 
@@ -29,8 +29,14 @@ app.include_router(pages.router)
 app.include_router(setup.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(customers.router, prefix="/api")
+
+## 新增：註冊消費項目 API
+app.include_router(items.router, prefix="/api")
+
 app.include_router(transactions.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
+
+
 
 @app.get("/health", tags=["system"])
 def health():

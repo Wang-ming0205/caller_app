@@ -1,3 +1,4 @@
+{#
 {% extends "base.html" %}
 {% block content %}
 <div class="card narrow">
@@ -16,3 +17,46 @@
 </div>
 {% endblock %}
 {% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h2>新增消費紀錄</h2>
+  <label>項目名稱</label><input id="item_name" placeholder="剪髮">
+  <label>數量</label><input id="qty" type="number" value="1" min="1">
+  <label>單價</label><input id="unit_price" type="number" value="500" min="0">
+  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
+  <button onclick="createTransaction()">新增消費</button>
+</div>
+<div class="card">
+  <h2>查詢客戶消費紀錄</h2>
+  <div class="row"><input id="tx_customer_id" type="number" placeholder="客戶 ID"><button onclick="listTransactions()">查詢</button></div>
+  <pre id="tx-result"></pre>
+</div>
+{% endblock %}
+{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
+#}
+
+
+
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h2>新增消費紀錄</h2>
+  <label>客戶 ID（選填）</label><input id="customer_id" type="number" placeholder="散客可留空">
+  <label>消費項目</label>
+  <select id="catalog_item_id" onchange="applyCatalogItemPrice()">
+    <option value="">請選擇消費項目</option>
+  </select>
+  <label>數量</label><input id="qty" type="number" value="1" min="1">
+  <label>單價</label><input id="unit_price" type="number" value="500" min="0">
+  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
+  <button onclick="createTransaction()">新增消費</button>
+</div>
+<div class="card">
+  <h2>查詢客戶消費紀錄</h2>
+  <div class="row"><input id="tx_customer_id" type="number" placeholder="客戶 ID"><button onclick="listTransactions()">查詢</button></div>
+  <pre id="tx-result"></pre>
+</div>
+{% endblock %}
+{% block scripts %}<script>initTransactionsPage();</script>{% endblock %}

@@ -31,7 +31,7 @@ def admin_token(client):
         "/api/auth/login",
         json={
             "username": "admin",
-            "password": "admin111",
+            "password": "admin123",
         },
     )
 
