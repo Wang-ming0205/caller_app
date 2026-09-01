@@ -53,8 +53,6 @@ async function api(path, options = {}) {
     return data;
   } finally {
     if (shouldShowLoading) {
-      await new Promise(resolve =>
-        setTimeout(resolve, 1000));
       hideLoading();
     }
   }
@@ -232,7 +230,14 @@ async function initHome() {
   }
 }
 
+let isCreatingCustomer = false;
+
 async function createCustomer() {
+  if (isCreatingCustomer) return;
+
+  isCreatingCustomer = true;
+
+
   try {
     const payload = {
       name: document.getElementById("name").value.trim(),
@@ -253,6 +258,8 @@ async function createCustomer() {
 
   } catch (err) {
     showError("新增失敗",err);
+  }finally{
+    isCreatingCustomer = false;
   }
 }
 
