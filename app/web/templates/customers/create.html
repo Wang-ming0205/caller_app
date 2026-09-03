@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{#{% extends "base.html" %}
 {% block content %}
 <div class="card narrow">
   <h2>新增客戶</h2>
@@ -6,6 +6,22 @@
   <label>手機</label><input id="phone_number" placeholder="0912345678">
   <label>性別</label><input id="gender" placeholder="男 / 女 / 其他">
   <label>生日</label><input id="birthday" type="date">
+  <label>備註</label><textarea id="note" placeholder="喜好、髮型、注意事項"></textarea>
+  <button onclick="createCustomer()">新增</button>
+</div>
+{% endblock %}
+{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
+#}
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h2>新增客戶</h2>
+  <p class="hint">姓名、手機與生日為必填資料；手機號碼不可重複。</p>
+  <label>姓名 *</label><input id="name" placeholder="王小明" required>
+  <label>手機 *</label><input id="phone_number" placeholder="0912345678" required>
+  <label>性別</label><input id="gender" placeholder="男 / 女 / 其他">
+  <label>生日 *</label><input id="birthday" type="date" required>
   <label>備註</label><textarea id="note" placeholder="喜好、髮型、注意事項"></textarea>
   <button onclick="createCustomer()">新增</button>
 </div>

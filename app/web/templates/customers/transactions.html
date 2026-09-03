@@ -1,45 +1,4 @@
-{#
-{% extends "base.html" %}
-{% block content %}
-<div class="card narrow">
-  <h2>新增消費紀錄</h2>
-  <label>客戶 ID</label><input id="customer_id" type="number" placeholder="例如 1">
-  <label>項目名稱</label><input id="item_name" placeholder="剪髮">
-  <label>數量</label><input id="qty" type="number" value="1" min="1">
-  <label>單價</label><input id="unit_price" type="number" value="500" min="0">
-  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
-  <button onclick="createTransaction()">新增消費</button>
-</div>
-<div class="card">
-  <h2>查詢客戶消費紀錄</h2>
-  <div class="row"><input id="tx_customer_id" type="number" placeholder="客戶 ID"><button onclick="listTransactions()">查詢</button></div>
-  <pre id="tx-result"></pre>
-</div>
-{% endblock %}
-{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
-{% extends "base.html" %}
-{% block content %}
-<div class="card narrow">
-  <h2>新增消費紀錄</h2>
-  <label>項目名稱</label><input id="item_name" placeholder="剪髮">
-  <label>數量</label><input id="qty" type="number" value="1" min="1">
-  <label>單價</label><input id="unit_price" type="number" value="500" min="0">
-  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
-  <button onclick="createTransaction()">新增消費</button>
-</div>
-<div class="card">
-  <h2>查詢客戶消費紀錄</h2>
-  <div class="row"><input id="tx_customer_id" type="number" placeholder="客戶 ID"><button onclick="listTransactions()">查詢</button></div>
-  <pre id="tx-result"></pre>
-</div>
-{% endblock %}
-{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
-#}
-
-
-
-
-{% extends "base.html" %}
+{#{% extends "base.html" %}
 {% block content %}
 <div class="card narrow">
   <h2>新增消費紀錄</h2>
@@ -56,6 +15,38 @@
 <div class="card">
   <h2>查詢客戶消費紀錄</h2>
   <div class="row"><input id="tx_customer_id" type="number" placeholder="客戶 ID"><button onclick="listTransactions()">查詢</button></div>
+  <pre id="tx-result"></pre>
+</div>
+{% endblock %}
+{% block scripts %}<script>initTransactionsPage();</script>{% endblock %}
+#}
+
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h2>新增消費紀錄</h2>
+  <p class="hint">輸入手機即可查出客戶，不需要記客戶 ID。</p>
+  <label>客戶手機 *</label>
+  <div class="row">
+    <input id="tx_phone_number" placeholder="0912345678" oninput="clearVerifiedTransactionCustomer()" onkeydown="if(event.key==='Enter') findTransactionCustomer()" required>
+    <button type="button" onclick="findTransactionCustomer()">查詢客戶</button>
+  </div>
+  <input id="customer_id" type="hidden">
+  <div id="transaction-customer-result" class="message hidden"></div>
+
+  <label>消費項目 *</label>
+  <input id="item_name" list="catalog-item-suggestions" placeholder="可直接輸入，例如：剪髮" oninput="applyCatalogItemPrice()" required>
+  <datalist id="catalog-item-suggestions"></datalist>
+  <p class="hint">可直接輸入新項目；常用項目只用來提供建議與預設價格。</p>
+  <label>數量 *</label><input id="qty" type="number" value="1" min="1" required>
+  <label>單價 *</label><input id="unit_price" type="number" value="500" min="0" required>
+  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
+  <button onclick="createTransaction()">新增消費</button>
+</div>
+<div class="card">
+  <h2>查詢客戶消費紀錄</h2>
+  <div class="row"><input id="tx_history_phone" placeholder="輸入客戶手機" onkeydown="if(event.key==='Enter') listTransactions()"><button onclick="listTransactions()">查詢</button></div>
   <pre id="tx-result"></pre>
 </div>
 {% endblock %}

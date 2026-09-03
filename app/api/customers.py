@@ -1,6 +1,7 @@
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 #新增匯出csv
@@ -20,11 +21,7 @@ from app.api.audit import write_audit_log
 router = APIRouter(prefix="/customers", tags=["customers"])
 
 
-def customer_scope(stmt, current_user: User):
-    """admin can see all customers; normal users only see their own."""
-    if current_user.role == "admin":
-        return stmt
-    return stmt.where(Customer.owner_user_id == current_user.id)
+PHONE_ALREADY_EXISTS = "Phone number already exists"
 
 
 @router.post("", response_model=CustomerOut)
@@ -37,15 +34,18 @@ def create_customer(
     exists = db.execute(
         select(Customer).where(
             Customer.phone_number == payload.phone_number,
-            Customer.owner_user_id == owner_user_id,
         )
     ).scalar_one_or_none()
     if exists:
-        raise HTTPException(status_code=400, detail="Phone number already exists for this user")
+        raise HTTPException(status_code=400, detail=PHONE_ALREADY_EXISTS)
 
     customer = Customer(**payload.model_dump(), owner_user_id=owner_user_id)
     db.add(customer)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=PHONE_ALREADY_EXISTS)
     db.refresh(customer)
 
     write_audit_log(
@@ -72,7 +72,6 @@ def search_customers(
         (Customer.name.ilike(f"%{q}%")) |
         (Customer.phone_number.ilike(f"%{q}%"))
     )
-    stmt = customer_scope(stmt, current_user)
     stmt = stmt.order_by(Customer.id.desc()).limit(20)
     return list(db.execute(stmt).scalars().all())
 
@@ -88,7 +87,6 @@ def list_customers(
     current_user: User = Depends(get_current_user),
 ):
     stmt = select(Customer)
-    stmt = customer_scope(stmt, current_user)
     stmt = stmt.order_by(Customer.id.desc()).limit(5)
     return list(db.execute(stmt).scalars().all())
 
@@ -101,7 +99,6 @@ def get_customer_by_phone(
     current_user: User = Depends(get_current_user),
 ):
     stmt = select(Customer).where(Customer.phone_number == phone_number)
-    stmt = customer_scope(stmt, current_user)
     customer = db.execute(stmt).scalar_one_or_none()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -114,7 +111,6 @@ def export_customers_csv(
     current_user: User = Depends(require_roles("admin", "manager", "staff")),
 ):
     stmt = select(Customer)
-    stmt = customer_scope(stmt, current_user)
     customers = db.execute(stmt).scalars().all()
 
     output = StringIO()
@@ -196,10 +192,26 @@ def update_customer(
     customer = require_customer_access(customer, current_user)
 
     data = payload.model_dump(exclude_unset=True)
+
+    new_phone_number = data.get("phone_number")
+    if new_phone_number is not None:
+        exists = db.execute(
+            select(Customer).where(
+                Customer.phone_number == new_phone_number,
+                Customer.id != customer_id,
+            )
+        ).scalar_one_or_none()
+        if exists:
+            raise HTTPException(status_code=400, detail=PHONE_ALREADY_EXISTS)
+
     for key, value in data.items():
         setattr(customer, key, value)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=PHONE_ALREADY_EXISTS)
     db.refresh(customer)
 
     write_audit_log(
@@ -259,4 +271,3 @@ def get_customer_summary(
         total_amount=Decimal(total_amount),
         last_day=last_day,
     )
-

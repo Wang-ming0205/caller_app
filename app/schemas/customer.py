@@ -5,7 +5,7 @@ from typing import Optional
 
 class CustomerBase(BaseModel):
     name: str = Field(..., min_length=1)
-    phone_number: str
+    phone_number: str = Field(..., min_length=1, max_length=20)
     gender: str | None = None
     birthday: date | None = None
     note: str | None = None
@@ -20,8 +20,18 @@ class CustomerBase(BaseModel):
 
         return value
 
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Phone number cannot be empty")
+
+        return value
+
 class CustomerCreate(CustomerBase):
-    pass
+    birthday: date
 
 class CustomerUpdate(BaseModel):
     name: str | None = None
@@ -29,6 +39,18 @@ class CustomerUpdate(BaseModel):
     gender: str | None = None
     birthday: date | None = None
     note: str | None = None
+
+    @field_validator("name", "phone_number")
+    @classmethod
+    def validate_required_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+
+        value = value.strip()
+        if not value:
+            raise ValueError("Value cannot be empty")
+
+        return value
 
 class CustomerOut(CustomerBase):
     id: int
