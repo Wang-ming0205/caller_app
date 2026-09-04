@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.api import auth, customers, items, transactions, setup, users
+from app.api import admin,auth, customers, items, transactions, setup, users
 from app.web import pages
 
 
@@ -26,6 +26,7 @@ app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 app.include_router(pages.router)
 
 # API routes with api prefix 
+app.include_router(admin.router, prefix="/api")
 app.include_router(setup.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(customers.router, prefix="/api")
