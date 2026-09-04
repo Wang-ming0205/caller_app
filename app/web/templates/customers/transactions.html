@@ -36,11 +36,12 @@
   <div id="transaction-customer-result" class="message hidden"></div>
 
   <label>消費項目 *</label>
-  <input id="item_name" list="catalog-item-suggestions" placeholder="可直接輸入，例如：剪髮" oninput="applyCatalogItemPrice()" required>
-  <datalist id="catalog-item-suggestions"></datalist>
-  <p class="hint">可直接輸入新項目；常用項目只用來提供建議與預設價格。</p>
+  <select id="catalog_item_id" onchange="applyCatalogItemPrice()" required>
+  <option value="">請選擇消費項目</option>
+  </select>
+  <p class="hint">請先至「消費項目」頁面新增項目與預設價格。</p>
   <label>數量 *</label><input id="qty" type="number" value="1" min="1" required>
-  <label>單價 *</label><input id="unit_price" type="number" value="500" min="0" required>
+  <label>單價 *</label><input id="unit_price" type="number" value="0" min="0" required>
   <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
   <button onclick="createTransaction()">新增消費</button>
 </div>

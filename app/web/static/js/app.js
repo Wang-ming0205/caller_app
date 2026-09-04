@@ -1179,20 +1179,85 @@ async function findTransactionCustomer() {
   }
 }
 
+// async function createTransaction() {
+//   if (isCreatingTransaction) return;
+
+//   const phoneNumber = document.getElementById("tx_phone_number").value.trim();
+//   const itemName = document.getElementById("item_name").value.trim();
+//   const qty = Number(document.getElementById("qty").value);
+//   const unitPrice = Number(document.getElementById("unit_price").value);
+
+//   if (!phoneNumber || !itemName) {
+//     showError("欄位未完成", "請填寫客戶手機與消費項目");
+//     return;
+//   }
+
+//   if (!Number.isInteger(qty) || qty < 1 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+//     showError("欄位格式錯誤", "數量至少為 1，單價不可小於 0");
+//     return;
+//   }
+
+//   isCreatingTransaction = true;
+//   showLoading("驗證客戶並新增消費中...");
+
+//   try {
+//     const customer = await api(
+//       `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
+//       {showLoading: false},
+//     );
+//     showVerifiedTransactionCustomer(customer);
+
+//     const payload = {
+//       customer_id: customer.id,
+//       note: document.getElementById("tx_note").value || null,
+//       items: [{
+//         item_name: itemName,
+//         qty,
+//         unit_price: unitPrice,
+//       }],
+//     };
+//     const data = await api("/transactions", {
+//       method: "POST",
+//       body: JSON.stringify(payload),
+//       showLoading: false,
+//     });
+
+//     hideLoading();
+//     await showSuccess("消費新增成功", `交易 ID ${data.id}，總金額 ${data.total_amount}`);
+//     document.getElementById("tx_phone_number").value = "";
+//     document.getElementById("item_name").value = "";
+//     document.getElementById("qty").value = "1";
+//     document.getElementById("tx_note").value = "";
+//     clearVerifiedTransactionCustomer();
+//   } catch (err) {
+//     hideLoading();
+//     showError("新增消費失敗", err);
+//   } finally {
+//     isCreatingTransaction = false;
+//   }
+// }
 async function createTransaction() {
   if (isCreatingTransaction) return;
 
   const phoneNumber = document.getElementById("tx_phone_number").value.trim();
-  const itemName = document.getElementById("item_name").value.trim();
+  const catalogSelect = document.getElementById("catalog_item_id");
+  const selectedItem = catalogSelect?.selectedOptions[0];
+  const itemName = selectedItem?.dataset.name || "";
+
   const qty = Number(document.getElementById("qty").value);
   const unitPrice = Number(document.getElementById("unit_price").value);
 
   if (!phoneNumber || !itemName) {
-    showError("欄位未完成", "請填寫客戶手機與消費項目");
+    showError("欄位未完成", "請填寫客戶手機並選擇消費項目");
     return;
   }
 
-  if (!Number.isInteger(qty) || qty < 1 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+  if (
+    !Number.isInteger(qty) ||
+    qty < 1 ||
+    !Number.isFinite(unitPrice) ||
+    unitPrice < 0
+  ) {
     showError("欄位格式錯誤", "數量至少為 1，單價不可小於 0");
     return;
   }
@@ -1205,6 +1270,7 @@ async function createTransaction() {
       `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
       {showLoading: false},
     );
+
     showVerifiedTransactionCustomer(customer);
 
     const payload = {
@@ -1216,6 +1282,7 @@ async function createTransaction() {
         unit_price: unitPrice,
       }],
     };
+
     const data = await api("/transactions", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -1223,11 +1290,18 @@ async function createTransaction() {
     });
 
     hideLoading();
-    await showSuccess("消費新增成功", `交易 ID ${data.id}，總金額 ${data.total_amount}`);
+
+    await showSuccess(
+      "消費新增成功",
+      `交易 ID ${data.id}，總金額 ${data.total_amount}`,
+    );
+
     document.getElementById("tx_phone_number").value = "";
-    document.getElementById("item_name").value = "";
+    catalogSelect.value = "";
     document.getElementById("qty").value = "1";
+    document.getElementById("unit_price").value = "0";
     document.getElementById("tx_note").value = "";
+
     clearVerifiedTransactionCustomer();
   } catch (err) {
     hideLoading();
@@ -1316,21 +1390,65 @@ async function createCatalogItem() {
   }
 }
 
-let catalogItemSuggestions = [];
+// let catalogItemSuggestions = [];
 
-async function loadCatalogSuggestions() {
-  const datalist = document.getElementById("catalog-item-suggestions");
-  if (!datalist) return;
+// async function loadCatalogSuggestions() {
+//   const datalist = document.getElementById("catalog-item-suggestions");
+//   if (!datalist) return;
+
+//   try {
+//     catalogItemSuggestions = await api("/items");
+//     datalist.innerHTML = "";
+
+//     for (const item of catalogItemSuggestions) {
+//       const option = document.createElement("option");
+//       option.value = item.name;
+//       option.label = `預設價格 ${item.default_price}`;
+//       datalist.appendChild(option);
+//     }
+//   } catch (err) {
+//     showError("讀取消費項目失敗", err);
+//   }
+// }
+
+// function applyCatalogItemPrice() {
+//   const itemName = document.getElementById("item_name")?.value.trim().toLowerCase();
+//   const matchedItem = catalogItemSuggestions.find(
+//     item => item.name.toLowerCase() === itemName,
+//   );
+
+//   if (matchedItem) {
+//     document.getElementById("unit_price").value = matchedItem.default_price;
+//   }
+// }
+
+async function loadCatalogOptions() {
+  const select = document.getElementById("catalog_item_id");
+  if (!select) return;
 
   try {
-    catalogItemSuggestions = await api("/items");
-    datalist.innerHTML = "";
+    const data = await api("/items");
 
-    for (const item of catalogItemSuggestions) {
+    select.innerHTML = '<option value="">請選擇消費項目</option>';
+
+    if (data.length === 0) {
       const option = document.createElement("option");
-      option.value = item.name;
-      option.label = `預設價格 ${item.default_price}`;
-      datalist.appendChild(option);
+      option.value = "";
+      option.textContent = "尚未建立消費項目";
+      option.disabled = true;
+      select.appendChild(option);
+      return;
+    }
+
+    for (const item of data) {
+      const option = document.createElement("option");
+
+      option.value = item.id;
+      option.textContent = `${item.name}（預設價格 ${item.default_price}）`;
+      option.dataset.name = item.name;
+      option.dataset.price = item.default_price;
+
+      select.appendChild(option);
     }
   } catch (err) {
     showError("讀取消費項目失敗", err);
@@ -1338,14 +1456,13 @@ async function loadCatalogSuggestions() {
 }
 
 function applyCatalogItemPrice() {
-  const itemName = document.getElementById("item_name")?.value.trim().toLowerCase();
-  const matchedItem = catalogItemSuggestions.find(
-    item => item.name.toLowerCase() === itemName,
-  );
+  const select = document.getElementById("catalog_item_id");
+  const selectedItem = select?.selectedOptions[0];
+  const priceInput = document.getElementById("unit_price");
 
-  if (matchedItem) {
-    document.getElementById("unit_price").value = matchedItem.default_price;
-  }
+  if (!priceInput) return;
+
+  priceInput.value = selectedItem?.dataset.price ?? "0";
 }
 
 async function initItemsPage() {
@@ -1354,9 +1471,15 @@ async function initItemsPage() {
   }
 }
 
+// async function initTransactionsPage() {
+//   if (await checkLoginStatus(true)) {
+//     await loadCatalogSuggestions();
+//   }
+// }
+
 async function initTransactionsPage() {
   if (await checkLoginStatus(true)) {
-    await loadCatalogSuggestions();
+    await loadCatalogOptions();
   }
 }
 
