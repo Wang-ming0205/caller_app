@@ -29,23 +29,25 @@ def test_transaction_page_uses_phone_and_allows_free_item_input(client):
     # assert 'id="tx_phone_number"' in response.text
     # assert 'id="item_name"' in response.text
     # assert 'id="catalog_item_id"' not in response.text
-    
-    #new_version
     response = client.get("/transactions")
+
     assert response.status_code == 200
+
     html = response.text
+
     # 使用手機查詢客戶
     assert 'id="tx_phone_number"' in html
-    # 客戶 ID 由查詢結果保存，不需要手動輸入
+
+    # 客戶 ID 由手機查詢結果寫入，不讓使用者手動輸入
     assert 'id="customer_id"' in html
     assert 'type="hidden"' in html
-    # 消費項目改成既有項目的下拉選單
-    assert 'id="catalog_item_id"' in html
-    assert 'onchange="applyCatalogItemPrice()"' in html
-    assert '請選擇消費項目' in html
-    # 不再允許直接輸入任意項目名稱
-    assert 'id="item_name"' not in html
-    assert 'catalog-item-suggestions' not in html
+
+    # 消費項目可以選擇常用項目，也可以直接輸入臨時項目
+    assert 'id="item_name"' in html
+    assert 'id="catalog-item-suggestions"' in html
+
+    # 不再使用舊版 select 下拉選單
+    assert 'id="catalog_item_id"' not in html
 
 
 def test_customer_create_page_marks_core_fields_required(client):
