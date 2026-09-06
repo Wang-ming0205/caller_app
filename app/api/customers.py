@@ -45,7 +45,10 @@ def create_customer(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail=PHONE_ALREADY_EXISTS)
+        raise HTTPException(
+            status_code=400, 
+            detail=PHONE_ALREADY_EXISTS
+    )
     db.refresh(customer)
 
     write_audit_log(
@@ -211,7 +214,10 @@ def update_customer(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail=PHONE_ALREADY_EXISTS)
+        raise HTTPException(
+            status_code=400, 
+            detail=PHONE_ALREADY_EXISTS
+    )
     db.refresh(customer)
 
     write_audit_log(

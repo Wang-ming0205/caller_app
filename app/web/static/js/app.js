@@ -483,6 +483,7 @@ async function createCustomer() {
 
   isCreatingCustomer = true;
 
+
   try {
     const name = document
       .getElementById("name")
@@ -750,6 +751,7 @@ function clearCustomerForm() {
   document.getElementById("note").value = "";
 }
 
+let catalogItems = [];
 let isCreatingTransaction = false;
 
 function clearVerifiedTransactionCustomer() {
@@ -839,14 +841,10 @@ async function createTransaction() {
     .value
     .trim();
 
-  const catalogSelect =
-    document.getElementById("catalog_item_id");
-
-  const selectedItem =
-    catalogSelect?.selectedOptions[0];
-
-  const itemName =
-    selectedItem?.dataset.name || "";
+  const itemName = document
+    .getElementById("item_name")
+    .value
+    .trim();
 
   const qty = Number(
     document.getElementById("qty").value,
@@ -859,7 +857,7 @@ async function createTransaction() {
   if (!phoneNumber || !itemName) {
     showError(
       "欄位未完成",
-      "請填寫客戶手機並選擇消費項目",
+      "請填寫客戶手機與消費項目",
     );
 
     return;
@@ -931,7 +929,9 @@ async function createTransaction() {
       "tx_phone_number",
     ).value = "";
 
-    catalogSelect.value = "";
+    document.getElementById(
+      "item_name",
+    ).value = "";
 
     document.getElementById(
       "qty",
@@ -1001,7 +1001,6 @@ async function listTransactions() {
       JSON.stringify(data, null, 2);
   } catch (err) {
     hideLoading();
-
     el.textContent = "";
 
     showError(
@@ -1028,10 +1027,14 @@ async function loadCatalogItems() {
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td>${item.id}</td>
         <td>${escapeHtml(item.name)}</td>
         <td>${escapeHtml(item.default_price)}</td>
-        <td>${escapeHtml(item.description || "")}</td>
+        <td>
+          <button
+            type="button"
+            onclick="deleteCatalogItem(${item.id})"
+          >刪除</button>
+        </td>
       `;
 
       tbody.appendChild(tr);
@@ -1096,7 +1099,7 @@ async function createCatalogItem() {
       "catalog_item_description",
     ).value = "";
 
-    await loadCatalogItems();
+    await refreshCatalogItems();
   } catch (err) {
     showError(
       "消費項目新增失敗",
@@ -1105,49 +1108,48 @@ async function createCatalogItem() {
   }
 }
 
-async function loadCatalogOptions() {
-  const select =
-    document.getElementById(
-      "catalog_item_id",
-    );
+async function deleteCatalogItem(id) {
+  const ok = await confirmAction(
+    "確定刪除此消費項目？",
+  );
 
-  if (!select) return;
+  if (!ok) return;
+
+  try {
+    await api(`/items/${id}`, {
+      method: "DELETE",
+    });
+
+    await showSuccess("消費項目刪除成功");
+    await refreshCatalogItems();
+  } catch (err) {
+    showError("刪除消費項目失敗", err);
+  }
+}
+
+async function loadCatalogOptions() {
+  const datalist = document.getElementById(
+    "catalog-item-suggestions",
+  );
+
+  if (!datalist) return [];
 
   try {
     const data = await api("/items");
-
-    select.innerHTML =
-      '<option value="">請選擇消費項目</option>';
-
-    if (data.length === 0) {
-      const option =
-        document.createElement("option");
-
-      option.value = "";
-      option.textContent =
-        "尚未建立消費項目";
-      option.disabled = true;
-
-      select.appendChild(option);
-
-      return;
-    }
+    catalogItems = data;
+    datalist.innerHTML = "";
 
     for (const item of data) {
       const option =
         document.createElement("option");
 
-      option.value = item.id;
-
-      option.textContent =
-        `${item.name}（預設價格 ${item.default_price}）`;
-
-      option.dataset.name = item.name;
-      option.dataset.price =
-        item.default_price;
-
-      select.appendChild(option);
+      option.value = item.name;
+      option.label =
+        `${item.name}（${item.default_price}）`;
+      datalist.appendChild(option);
     }
+
+    return data;
   } catch (err) {
     showError(
       "讀取消費項目失敗",
@@ -1157,21 +1159,27 @@ async function loadCatalogOptions() {
 }
 
 function applyCatalogItemPrice() {
-  const select =
+  const name = document
+    .getElementById("item_name")
+    ?.value
+    .trim();
+
+  const matchedItem = catalogItems.find(
+    (item) => item.name === name,
+  );
+
+  if (matchedItem) {
     document.getElementById(
-      "catalog_item_id",
-    );
+      "unit_price",
+    ).value = matchedItem.default_price;
+  }
+}
 
-  const selectedItem =
-    select?.selectedOptions[0];
-
-  const priceInput =
-    document.getElementById("unit_price");
-
-  if (!priceInput) return;
-
-  priceInput.value =
-    selectedItem?.dataset.price ?? "0";
+async function refreshCatalogItems() {
+  await Promise.all([
+    loadCatalogItems(),
+    loadCatalogOptions(),
+  ]);
 }
 
 async function initItemsPage() {
@@ -1182,7 +1190,7 @@ async function initItemsPage() {
 
 async function initTransactionsPage() {
   if (await checkLoginStatus(true)) {
-    await loadCatalogOptions();
+    await refreshCatalogItems();
   }
 }
 

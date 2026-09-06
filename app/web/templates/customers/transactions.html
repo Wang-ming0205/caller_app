@@ -1,53 +1,95 @@
-{#{% extends "base.html" %}
-{% block content %}
-<div class="card narrow">
-  <h2>新增消費紀錄</h2>
-  <label>客戶 ID（選填）</label><input id="customer_id" type="number" placeholder="散客可留空">
-  <label>消費項目</label>
-  <select id="catalog_item_id" onchange="applyCatalogItemPrice()">
-    <option value="">請選擇消費項目</option>
-  </select>
-  <label>數量</label><input id="qty" type="number" value="1" min="1">
-  <label>單價</label><input id="unit_price" type="number" value="500" min="0">
-  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
-  <button onclick="createTransaction()">新增消費</button>
-</div>
-<div class="card">
-  <h2>查詢客戶消費紀錄</h2>
-  <div class="row"><input id="tx_customer_id" type="number" placeholder="客戶 ID"><button onclick="listTransactions()">查詢</button></div>
-  <pre id="tx-result"></pre>
-</div>
-{% endblock %}
-{% block scripts %}<script>initTransactionsPage();</script>{% endblock %}
-#}
-
-
 {% extends "base.html" %}
 {% block content %}
-<div class="card narrow">
-  <h2>新增消費紀錄</h2>
-  <p class="hint">輸入手機即可查出客戶，不需要記客戶 ID。</p>
+<style>
+  .transactions-layout {
+    display: grid;
+    grid-template-columns: minmax(380px, 448px) minmax(420px, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .transactions-layout .card {
+    width: auto;
+    max-width: none;
+    margin: 0;
+  }
+
+  .transactions-layout .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .transactions-layout table {
+    width: 100%;
+  }
+
+  .transaction-history {
+    margin-top: 16px;
+  }
+
+  @media (max-width: 1100px) {
+    .transactions-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="transactions-layout">
+<div class="card">
+  <h2>新增消費</h2>
+  <p class="hint">輸入手機查出客戶，再選擇或直接輸入消費項目。</p>
+
   <label>客戶手機 *</label>
   <div class="row">
-    <input id="tx_phone_number" placeholder="0912345678" oninput="clearVerifiedTransactionCustomer()" onkeydown="if(event.key==='Enter') findTransactionCustomer()" required>
+    <input id="tx_phone_number" placeholder="0912345678"
+           oninput="clearVerifiedTransactionCustomer()"
+           onkeydown="if(event.key==='Enter') findTransactionCustomer()" required>
     <button type="button" onclick="findTransactionCustomer()">查詢客戶</button>
   </div>
   <input id="customer_id" type="hidden">
   <div id="transaction-customer-result" class="message hidden"></div>
 
   <label>消費項目 *</label>
-  <select id="catalog_item_id" onchange="applyCatalogItemPrice()" required>
-  <option value="">請選擇消費項目</option>
-  </select>
-  <p class="hint">請先至「消費項目」頁面新增項目與預設價格。</p>
-  <label>數量 *</label><input id="qty" type="number" value="1" min="1" required>
-  <label>單價 *</label><input id="unit_price" type="number" value="0" min="0" required>
-  <label>備註</label><textarea id="tx_note" placeholder="剪髮+洗髮"></textarea>
-  <button onclick="createTransaction()">新增消費</button>
+  <input id="item_name" list="catalog-item-suggestions" placeholder="例如：剪髮"
+         oninput="applyCatalogItemPrice()" required>
+  <datalist id="catalog-item-suggestions"></datalist>
+  <p class="hint">可選擇常用項目，也可以直接輸入臨時項目。</p>
+
+  <label>數量 *</label>
+  <input id="qty" type="number" value="1" min="1" required>
+  <label>單價 *</label>
+  <input id="unit_price" type="number" value="500" min="0" required>
+  <label>備註</label>
+  <textarea id="tx_note" placeholder="剪髮＋洗髮"></textarea>
+  <button type="button" onclick="createTransaction()">新增消費</button>
 </div>
+
 <div class="card">
+  <h2>常用消費項目</h2>
+  <p class="hint">在這裡新增後，上方會立刻出現在項目建議中。</p>
+  <label>項目名稱 *</label>
+  <input id="catalog_item_name" placeholder="例如：剪髮" required>
+  <label>預設價格 *</label>
+  <input id="catalog_item_price" type="number" value="0" min="0" required>
+  <label>說明</label>
+  <input id="catalog_item_description" placeholder="選填">
+  <button type="button" onclick="createCatalogItem()">新增項目</button>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>項目</th><th>預設價格</th><th>操作</th></tr></thead>
+      <tbody id="catalog-items-table"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<div class="card transaction-history">
   <h2>查詢客戶消費紀錄</h2>
-  <div class="row"><input id="tx_history_phone" placeholder="輸入客戶手機" onkeydown="if(event.key==='Enter') listTransactions()"><button onclick="listTransactions()">查詢</button></div>
+  <label>客戶手機</label>
+  <input id="tx_history_phone" placeholder="輸入客戶手機"
+         onkeydown="if(event.key==='Enter') listTransactions()">
+  <button type="button" onclick="listTransactions()">查詢</button>
   <pre id="tx-result"></pre>
 </div>
 {% endblock %}

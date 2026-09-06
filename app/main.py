@@ -23,7 +23,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 
 # HTML pages
-app.include_router(pages.router)
+app.include_router(pages.router,include_in_schema=False)
 
 # API routes with api prefix 
 app.include_router(admin.router, prefix="/api")

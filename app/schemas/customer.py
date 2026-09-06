@@ -1,7 +1,21 @@
+import re
 from datetime import date, datetime
 from decimal import Decimal
+
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+
+
+TAIWAN_MOBILE_PATTERN = re.compile(r"09\d{8}")
+
+
+def validate_taiwan_mobile(value: str) -> str:
+    value = value.strip()
+
+    if not TAIWAN_MOBILE_PATTERN.fullmatch(value):
+        raise ValueError("Phone number must start with 09 and contain exactly 10 digits")
+
+    return value
+
 
 class CustomerBase(BaseModel):
     name: str = Field(..., min_length=1)
@@ -9,7 +23,7 @@ class CustomerBase(BaseModel):
     gender: str | None = None
     birthday: date | None = None
     note: str | None = None
-    
+
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
@@ -23,15 +37,12 @@ class CustomerBase(BaseModel):
     @field_validator("phone_number")
     @classmethod
     def validate_phone_number(cls, value: str) -> str:
-        value = value.strip()
+        return validate_taiwan_mobile(value)
 
-        if not value:
-            raise ValueError("Phone number cannot be empty")
-
-        return value
 
 class CustomerCreate(CustomerBase):
     birthday: date
+
 
 class CustomerUpdate(BaseModel):
     name: str | None = None
@@ -40,17 +51,26 @@ class CustomerUpdate(BaseModel):
     birthday: date | None = None
     note: str | None = None
 
-    @field_validator("name", "phone_number")
+    @field_validator("name")
     @classmethod
-    def validate_required_text(cls, value: str | None) -> str | None:
+    def validate_name(cls, value: str | None) -> str | None:
         if value is None:
-            return value
+            return None
 
         value = value.strip()
         if not value:
-            raise ValueError("Value cannot be empty")
+            raise ValueError("Name cannot be empty")
 
         return value
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        return validate_taiwan_mobile(value)
+
 
 class CustomerOut(CustomerBase):
     id: int
@@ -60,6 +80,7 @@ class CustomerOut(CustomerBase):
 
     class Config:
         from_attributes = True
+
 
 class CustomerSummaryOut(BaseModel):
     customer_id: int
