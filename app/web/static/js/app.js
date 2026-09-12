@@ -1,24 +1,49 @@
 // new version
 const API_PREFIX = "/api";
 let currentUser = null;
+let apiLoadingCount = 0;
+let apiLoadingCloseTimer = null;
+let isInitialPageLoad =
+  sessionStorage.getItem("page_navigation_loading") === "true";
 
-async function api(path, options = {}) {
-  // 如果剛從其他頁面透過 goToPage() 跳轉過來，
-  // 舊頁面已經顯示過「頁面載入中」，第一個初始化 API 就不要再顯示「讀取中」。
-  const skipInitialLoading =
-    options.showLoading !== false &&
-    sessionStorage.getItem("page_navigation_loading") === "true";
-
-  if (skipInitialLoading) {
-    // 只略過新頁面的第一個 API，之後的新增、查詢、刪除仍會顯示「讀取中」。
-    sessionStorage.removeItem("page_navigation_loading");
+function beginApiLoading() {
+  if (apiLoadingCloseTimer) {
+    clearTimeout(apiLoadingCloseTimer);
+    apiLoadingCloseTimer = null;
   }
 
-  const shouldShowLoading =
-    options.showLoading !== false && !skipInitialLoading;
+  apiLoadingCount += 1;
+  showLoading(
+    isInitialPageLoad
+      ? "頁面載入中..."
+      : "讀取中...",
+  );
+}
+
+function endApiLoading() {
+  apiLoadingCount = Math.max(0, apiLoadingCount - 1);
+
+  if (apiLoadingCount > 0) return;
+
+  // 延到下一輪再關閉，讓連續 await 的初始化 API 共用同一個動畫。
+  apiLoadingCloseTimer = setTimeout(() => {
+    if (apiLoadingCount > 0) return;
+
+    hideLoading();
+    apiLoadingCloseTimer = null;
+
+    if (isInitialPageLoad) {
+      isInitialPageLoad = false;
+      sessionStorage.removeItem("page_navigation_loading");
+    }
+  }, 0);
+}
+
+async function api(path, options = {}) {
+  const shouldShowLoading = options.showLoading !== false;
 
   if (shouldShowLoading) {
-    showLoading();
+    beginApiLoading();
   }
 
   try {
@@ -60,7 +85,7 @@ async function api(path, options = {}) {
     return data;
   } finally {
     if (shouldShowLoading) {
-      hideLoading();
+      endApiLoading();
     }
   }
 }
@@ -89,7 +114,24 @@ function hideLoading() {
   Swal.close();
 }
 
+function finishApiLoadingBeforeMessage() {
+  if (apiLoadingCloseTimer) {
+    clearTimeout(apiLoadingCloseTimer);
+    apiLoadingCloseTimer = null;
+  }
+
+  apiLoadingCount = 0;
+  hideLoading();
+
+  if (isInitialPageLoad) {
+    isInitialPageLoad = false;
+    sessionStorage.removeItem("page_navigation_loading");
+  }
+}
+
 async function showSuccess(title, text = "") {
+  finishApiLoadingBeforeMessage();
+
   if (hasSwal()) {
     await Swal.fire({
       icon: "success",
@@ -108,6 +150,8 @@ async function showSuccess(title, text = "") {
 }
 
 function showError(title, err) {
+  finishApiLoadingBeforeMessage();
+
   const text = err?.message || String(err);
 
   if (hasSwal()) {
@@ -122,6 +166,8 @@ function showError(title, err) {
 }
 
 function showInfo(title, text = "") {
+  finishApiLoadingBeforeMessage();
+
   if (hasSwal()) {
     Swal.fire({
       icon: "info",
@@ -141,6 +187,8 @@ async function confirmAction(
   title,
   text = "此操作無法復原",
 ) {
+  finishApiLoadingBeforeMessage();
+
   if (hasSwal()) {
     const result = await Swal.fire({
       title,
