@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{#{% extends "base.html" %}
 {% block content %}
 <style>
   .transactions-layout {
@@ -94,3 +94,248 @@
 </div>
 {% endblock %}
 {% block scripts %}<script>initTransactionsPage();</script>{% endblock %}
+#}
+
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .transaction-page {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .transaction-section {
+    width: 100%;
+  }
+
+  .transaction-section h2 {
+    margin-bottom: 6px;
+  }
+
+  .category-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .category-buttons button {
+    min-height: 68px;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .category-buttons button.selected {
+    background: #0f766e;
+    outline: 3px solid #99f6e4;
+  }
+
+  .amount-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .amount-summary p {
+    flex: 1;
+    padding: 18px;
+    margin: 0;
+    border-radius: 12px;
+    background: #eff6ff;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .save-transaction-button {
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 760px) {
+    .category-buttons {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .amount-summary {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<section class="transaction-page">
+
+  <!-- DIV 1：查詢客戶 -->
+  <div class="card transaction-section">
+    <h2>查詢客戶</h2>
+
+    <p class="hint">
+      輸入客戶手機，確認客戶後才能新增消費。
+    </p>
+
+    <label for="tx_phone_number">客戶手機 *</label>
+
+    <input
+      id="tx_phone_number"
+      placeholder="0912345678"
+      oninput="clearVerifiedTransactionCustomer()"
+      onkeydown="
+        if (event.key === 'Enter') {
+          findTransactionCustomer();
+        }
+      "
+      required
+    >
+
+    <input id="customer_id" type="hidden">
+
+    <button
+      type="button"
+      onclick="findTransactionCustomer()"
+    >
+      查詢客戶
+    </button>
+
+    <p
+      id="transaction-customer-result"
+      class="message hidden"
+    ></p>
+  </div>
+
+  <!-- DIV 2：四個大分類 -->
+  <div class="card transaction-section">
+    <h2>消費分類</h2>
+
+    <p class="hint">
+      選擇剪、洗、染、燙，再輸入數量與價格。
+    </p>
+
+    <section class="category-buttons">
+      <button
+        type="button"
+        data-category="剪"
+        onclick="selectServiceCategory('剪', this)"
+      >
+        剪
+      </button>
+
+      <button
+        type="button"
+        data-category="洗"
+        onclick="selectServiceCategory('洗', this)"
+      >
+        洗
+      </button>
+
+      <button
+        type="button"
+        data-category="染"
+        onclick="selectServiceCategory('染', this)"
+      >
+        染
+      </button>
+
+      <button
+        type="button"
+        data-category="燙"
+        onclick="selectServiceCategory('燙', this)"
+      >
+        燙
+      </button>
+    </section>
+
+    <label for="item_name">本次項目 *</label>
+    <input
+      id="item_name"
+      placeholder="先選擇上方分類"
+      readonly
+    >
+    <label for="item_description">描述</label>
+    <input
+      id="item_description"
+      placeholder="例如：剪短一點、補染髮根、自然捲"
+    >
+    
+    <label for="qty">數量 *</label>
+    <input
+      id="qty"
+      type="number"
+      value="1"
+      min="1"
+      required
+    >
+
+    <label for="unit_price">價格 *</label>
+    <input
+      id="unit_price"
+      type="number"
+      value="0"
+      min="0"
+      required
+    >
+
+    <button
+      type="button"
+      onclick="addTransactionItem()"
+    >
+      加入此次消費
+    </button>
+  </div>
+
+  <!-- DIV 3：此次消費＋總消費 -->
+  <div class="card transaction-section">
+    <h2>消費紀錄</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>數量</th>
+          <th>金額</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+
+      <tbody id="current-items-table">
+        <tr>
+          <td colspan="4">尚未加入消費項目</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section class="amount-summary">
+      <p>
+        此次消費：
+        <span id="current-spending">NT$ 0</span>
+      </p>
+
+      <p>
+        總消費：
+        <span id="total-spending">NT$ 0</span>
+      </p>
+    </section>
+
+    <label for="tx_note">備註</label>
+    <textarea
+      id="tx_note"
+      placeholder="本次消費備註"
+    ></textarea>
+
+    <button
+      type="button"
+      class="save-transaction-button"
+      onclick="createTransaction()"
+    >
+      儲存本次消費
+    </button>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  initTransactionsPage();
+</script>
+{% endblock %}

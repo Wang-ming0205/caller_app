@@ -751,17 +751,398 @@ function clearCustomerForm() {
   document.getElementById("note").value = "";
 }
 
+// let catalogItems = [];
+// let isCreatingTransaction = false;
+
+// function clearVerifiedTransactionCustomer() {
+//   const customerId =
+//     document.getElementById("customer_id");
+
+//   const result =
+//     document.getElementById(
+//       "transaction-customer-result",
+//     );
+
+//   if (customerId) {
+//     customerId.value = "";
+//   }
+
+//   if (result) {
+//     result.textContent = "";
+//     result.classList.add("hidden");
+//   }
+// }
+
+// function showVerifiedTransactionCustomer(
+//   customer,
+// ) {
+//   const customerId =
+//     document.getElementById("customer_id");
+
+//   const result =
+//     document.getElementById(
+//       "transaction-customer-result",
+//     );
+
+//   if (customerId) {
+//     customerId.value = customer.id;
+//   }
+
+//   if (result) {
+//     result.textContent =
+//       `已找到：${customer.name}／生日：` +
+//       `${customer.birthday || "未填"}`;
+
+//     result.classList.remove(
+//       "hidden",
+//       "error",
+//     );
+//   }
+// }
+
+// async function findTransactionCustomer() {
+//   const phoneNumber = document
+//     .getElementById("tx_phone_number")
+//     .value
+//     .trim();
+
+//   if (!phoneNumber) {
+//     clearVerifiedTransactionCustomer();
+
+//     showError(
+//       "欄位未完成",
+//       "請輸入客戶手機",
+//     );
+
+//     return null;
+//   }
+
+//   try {
+//     const customer = await api(
+//       `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
+//     );
+
+//     showVerifiedTransactionCustomer(customer);
+
+//     return customer;
+//   } catch (err) {
+//     clearVerifiedTransactionCustomer();
+//     showError("找不到客戶", err);
+
+//     return null;
+//   }
+// }
+
+// async function createTransaction() {
+//   if (isCreatingTransaction) return;
+
+//   const phoneNumber = document
+//     .getElementById("tx_phone_number")
+//     .value
+//     .trim();
+
+//   const itemName = document
+//     .getElementById("item_name")
+//     .value
+//     .trim();
+
+//   const qty = Number(
+//     document.getElementById("qty").value,
+//   );
+
+//   const unitPrice = Number(
+//     document.getElementById("unit_price").value,
+//   );
+
+//   if (!phoneNumber || !itemName) {
+//     showError(
+//       "欄位未完成",
+//       "請填寫客戶手機與消費項目",
+//     );
+
+//     return;
+//   }
+
+//   if (
+//     !Number.isInteger(qty) ||
+//     qty < 1 ||
+//     !Number.isFinite(unitPrice) ||
+//     unitPrice < 0
+//   ) {
+//     showError(
+//       "欄位格式錯誤",
+//       "數量至少為 1，單價不可小於 0",
+//     );
+
+//     return;
+//   }
+
+//   isCreatingTransaction = true;
+
+//   showLoading(
+//     "驗證客戶並新增消費中...",
+//   );
+
+//   try {
+//     const customer = await api(
+//       `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
+//       {
+//         showLoading: false,
+//       },
+//     );
+
+//     showVerifiedTransactionCustomer(customer);
+
+//     const payload = {
+//       customer_id: customer.id,
+
+//       note:
+//         document.getElementById("tx_note")
+//           .value || null,
+
+//       items: [
+//         {
+//           item_name: itemName,
+//           qty,
+//           unit_price: unitPrice,
+//         },
+//       ],
+//     };
+
+//     const data = await api(
+//       "/transactions",
+//       {
+//         method: "POST",
+//         body: JSON.stringify(payload),
+//         showLoading: false,
+//       },
+//     );
+
+//     hideLoading();
+
+//     await showSuccess(
+//       "消費新增成功",
+//       `交易 ID ${data.id}，總金額 ${data.total_amount}`,
+//     );
+
+//     document.getElementById(
+//       "tx_phone_number",
+//     ).value = "";
+
+//     document.getElementById(
+//       "item_name",
+//     ).value = "";
+
+//     document.getElementById(
+//       "qty",
+//     ).value = "1";
+
+//     document.getElementById(
+//       "unit_price",
+//     ).value = "0";
+
+//     document.getElementById(
+//       "tx_note",
+//     ).value = "";
+
+//     clearVerifiedTransactionCustomer();
+//   } catch (err) {
+//     hideLoading();
+
+//     showError(
+//       "新增消費失敗",
+//       err,
+//     );
+//   } finally {
+//     isCreatingTransaction = false;
+//   }
+// }
+
+// async function listTransactions() {
+//   const el =
+//     document.getElementById("tx-result");
+
+//   const phoneNumber = document
+//     .getElementById("tx_history_phone")
+//     .value
+//     .trim();
+
+//   if (!phoneNumber) {
+//     el.textContent = "";
+
+//     showError(
+//       "欄位未完成",
+//       "請輸入客戶手機",
+//     );
+
+//     return;
+//   }
+
+//   showLoading("讀取消費紀錄中...");
+
+//   try {
+//     const customer = await api(
+//       `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
+//       {
+//         showLoading: false,
+//       },
+//     );
+
+//     const data = await api(
+//       `/transactions/customer/${customer.id}`,
+//       {
+//         showLoading: false,
+//       },
+//     );
+
+//     hideLoading();
+
+//     el.textContent =
+//       JSON.stringify(data, null, 2);
+//   } catch (err) {
+//     hideLoading();
+//     el.textContent = "";
+
+//     showError(
+//       "讀取消費紀錄失敗",
+//       err,
+//     );
+//   }
+// }
+
+// async function loadCatalogItems() {
+//   const tbody =
+//     document.getElementById(
+//       "catalog-items-table",
+//     );
+
+//   if (!tbody) return [];
+
+//   try {
+//     const data = await api("/items");
+
+//     tbody.innerHTML = "";
+
+//     for (const item of data) {
+//       const tr = document.createElement("tr");
+
+//       tr.innerHTML = `
+//         <td>${escapeHtml(item.name)}</td>
+//         <td>${escapeHtml(item.default_price)}</td>
+//         <td>
+//           <button
+//             type="button"
+//             onclick="deleteCatalogItem(${item.id})"
+//           >刪除</button>
+//         </td>
+//       `;
+
+//       tbody.appendChild(tr);
+//     }
+
+//     return data;
+//   } catch (err) {
+//     showError(
+//       "讀取消費項目失敗",
+//       err,
+//     );
+
+//     return [];
+//   }
+// }
+
+// async function createCatalogItem() {
+//   try {
+//     const payload = {
+//       name: document
+//         .getElementById("catalog_item_name")
+//         .value
+//         .trim(),
+
+//       default_price: Number(
+//         document
+//           .getElementById("catalog_item_price")
+//           .value || 0,
+//       ),
+
+//       description:
+//         document
+//           .getElementById(
+//             "catalog_item_description",
+//           )
+//           .value
+//           .trim() || null,
+//     };
+
+//     const data = await api(
+//       "/items",
+//       {
+//         method: "POST",
+//         body: JSON.stringify(payload),
+//       },
+//     );
+
+//     await showSuccess(
+//       "消費項目新增成功",
+//       `${data.name} / ID ${data.id}`,
+//     );
+
+//     document.getElementById(
+//       "catalog_item_name",
+//     ).value = "";
+
+//     document.getElementById(
+//       "catalog_item_price",
+//     ).value = "0";
+
+//     document.getElementById(
+//       "catalog_item_description",
+//     ).value = "";
+
+//     await refreshCatalogItems();
+//   } catch (err) {
+//     showError(
+//       "消費項目新增失敗",
+//       err,
+//     );
+//   }
+// }
+
 let catalogItems = [];
 let isCreatingTransaction = false;
+
+let transactionItems = [];
+let selectedTransactionCustomer = null;
+let customerHistoryTotal = 0;
+
+function formatMoney(value) {
+  const amount = Number(value) || 0;
+
+  return `NT$ ${amount.toLocaleString("zh-TW")}`;
+}
+
+function clearSelectedCategory() {
+  document
+    .querySelectorAll("[data-category]")
+    .forEach((button) => {
+      button.classList.remove("selected");
+    });
+
+  const itemName =
+    document.getElementById("item_name");
+
+  if (itemName) {
+    itemName.value = "";
+  }
+}
 
 function clearVerifiedTransactionCustomer() {
   const customerId =
     document.getElementById("customer_id");
 
-  const result =
-    document.getElementById(
-      "transaction-customer-result",
-    );
+  const result = document.getElementById(
+    "transaction-customer-result",
+  );
 
   if (customerId) {
     customerId.value = "";
@@ -771,18 +1152,29 @@ function clearVerifiedTransactionCustomer() {
     result.textContent = "";
     result.classList.add("hidden");
   }
+
+  selectedTransactionCustomer = null;
+  customerHistoryTotal = 0;
+  transactionItems = [];
+
+  clearSelectedCategory();
+  renderTransactionItems();
 }
 
 function showVerifiedTransactionCustomer(
   customer,
+  summary,
 ) {
   const customerId =
     document.getElementById("customer_id");
 
-  const result =
-    document.getElementById(
-      "transaction-customer-result",
-    );
+  const result = document.getElementById(
+    "transaction-customer-result",
+  );
+
+  selectedTransactionCustomer = customer;
+  customerHistoryTotal =
+    Number(summary?.total_amount) || 0;
 
   if (customerId) {
     customerId.value = customer.id;
@@ -790,21 +1182,24 @@ function showVerifiedTransactionCustomer(
 
   if (result) {
     result.textContent =
-      `已找到：${customer.name}／生日：` +
-      `${customer.birthday || "未填"}`;
+      `客戶：${customer.name}／` +
+      `手機：${customer.phone_number}`;
 
     result.classList.remove(
       "hidden",
       "error",
     );
   }
+
+  renderTransactionItems();
 }
 
 async function findTransactionCustomer() {
-  const phoneNumber = document
-    .getElementById("tx_phone_number")
-    .value
-    .trim();
+  const phoneInput =
+    document.getElementById("tx_phone_number");
+
+  const phoneNumber =
+    phoneInput.value.trim();
 
   if (!phoneNumber) {
     clearVerifiedTransactionCustomer();
@@ -819,10 +1214,19 @@ async function findTransactionCustomer() {
 
   try {
     const customer = await api(
-      `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
+      `/customers/by-phone/${
+        encodeURIComponent(phoneNumber)
+      }`,
     );
 
-    showVerifiedTransactionCustomer(customer);
+    const summary = await api(
+      `/customers/${customer.id}/summary`,
+    );
+
+    showVerifiedTransactionCustomer(
+      customer,
+      summary,
+    );
 
     return customer;
   } catch (err) {
@@ -833,14 +1237,24 @@ async function findTransactionCustomer() {
   }
 }
 
-async function createTransaction() {
-  if (isCreatingTransaction) return;
+function selectServiceCategory(
+  category,
+  selectedButton,
+) {
+  document
+    .querySelectorAll("[data-category]")
+    .forEach((button) => {
+      button.classList.remove("selected");
+    });
 
-  const phoneNumber = document
-    .getElementById("tx_phone_number")
-    .value
-    .trim();
+  selectedButton.classList.add("selected");
 
+  document.getElementById(
+    "item_name",
+  ).value = category;
+}
+
+function addTransactionItem() {
   const itemName = document
     .getElementById("item_name")
     .value
@@ -854,24 +1268,173 @@ async function createTransaction() {
     document.getElementById("unit_price").value,
   );
 
-  if (!phoneNumber || !itemName) {
+  if (!itemName) {
     showError(
-      "欄位未完成",
-      "請填寫客戶手機與消費項目",
+      "尚未選擇分類",
+      "請先選擇剪、洗、染或燙",
+    );
+
+    return;
+  }
+
+  if (!Number.isInteger(qty) || qty < 1) {
+    showError(
+      "數量錯誤",
+      "數量至少必須是 1",
     );
 
     return;
   }
 
   if (
-    !Number.isInteger(qty) ||
-    qty < 1 ||
     !Number.isFinite(unitPrice) ||
     unitPrice < 0
   ) {
     showError(
-      "欄位格式錯誤",
-      "數量至少為 1，單價不可小於 0",
+      "價格錯誤",
+      "價格不可小於 0",
+    );
+
+    return;
+  }
+
+  transactionItems.push({
+    item_name: itemName,
+    qty,
+    unit_price: unitPrice,
+  });
+
+  document.getElementById("qty").value = "1";
+  document.getElementById(
+    "unit_price",
+  ).value = "0";
+
+  clearSelectedCategory();
+  renderTransactionItems();
+}
+
+function removeTransactionItem(index) {
+  transactionItems.splice(index, 1);
+  renderTransactionItems();
+}
+
+function calculateCurrentSpending() {
+  return transactionItems.reduce(
+    (total, item) => (
+      total +
+      Number(item.qty) *
+      Number(item.unit_price)
+    ),
+    0,
+  );
+}
+
+function renderTransactionItems() {
+  const tbody = document.getElementById(
+    "current-items-table",
+  );
+
+  const currentSpending =
+    document.getElementById(
+      "current-spending",
+    );
+
+  const totalSpending =
+    document.getElementById(
+      "total-spending",
+    );
+
+  const currentTotal =
+    calculateCurrentSpending();
+
+  if (currentSpending) {
+    currentSpending.textContent =
+      formatMoney(currentTotal);
+  }
+
+  if (totalSpending) {
+    totalSpending.textContent =
+      formatMoney(
+        customerHistoryTotal + currentTotal,
+      );
+  }
+
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  if (transactionItems.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4">
+          尚未加入消費項目
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  transactionItems.forEach((item, index) => {
+    const subtotal =
+      Number(item.qty) *
+      Number(item.unit_price);
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${escapeHtml(item.item_name)}</td>
+      <td>${item.qty}</td>
+      <td>${formatMoney(subtotal)}</td>
+      <td>
+        <button
+          type="button"
+          onclick="removeTransactionItem(${index})"
+        >
+          移除
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(row);
+  });
+}
+
+async function createTransaction() {
+  if (isCreatingTransaction) return;
+
+  const phoneNumber = document
+    .getElementById("tx_phone_number")
+    .value
+    .trim();
+
+  if (!selectedTransactionCustomer) {
+    showError(
+      "尚未確認客戶",
+      "請先使用手機號碼查詢客戶",
+    );
+
+    return;
+  }
+
+  if (
+    phoneNumber !==
+    selectedTransactionCustomer.phone_number
+  ) {
+    clearVerifiedTransactionCustomer();
+
+    showError(
+      "客戶資料已變更",
+      "手機號碼變更後，請重新查詢客戶",
+    );
+
+    return;
+  }
+
+  if (transactionItems.length === 0) {
+    showError(
+      "沒有消費項目",
+      "請至少加入一個消費項目",
     );
 
     return;
@@ -879,34 +1442,22 @@ async function createTransaction() {
 
   isCreatingTransaction = true;
 
-  showLoading(
-    "驗證客戶並新增消費中...",
-  );
-
   try {
-    const customer = await api(
-      `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
-      {
-        showLoading: false,
-      },
-    );
-
-    showVerifiedTransactionCustomer(customer);
-
     const payload = {
-      customer_id: customer.id,
+      customer_id:
+        selectedTransactionCustomer.id,
 
       note:
-        document.getElementById("tx_note")
-          .value || null,
+        document
+          .getElementById("tx_note")
+          .value
+          .trim() || null,
 
-      items: [
-        {
-          item_name: itemName,
-          qty,
-          unit_price: unitPrice,
-        },
-      ],
+      items: transactionItems.map((item) => ({
+        item_name: item.item_name,
+        qty: item.qty,
+        unit_price: item.unit_price,
+      })),
     };
 
     const data = await api(
@@ -914,197 +1465,34 @@ async function createTransaction() {
       {
         method: "POST",
         body: JSON.stringify(payload),
-        showLoading: false,
       },
     );
 
-    hideLoading();
+    customerHistoryTotal +=
+      Number(data.total_amount) || 0;
 
-    await showSuccess(
-      "消費新增成功",
-      `交易 ID ${data.id}，總金額 ${data.total_amount}`,
-    );
-
-    document.getElementById(
-      "tx_phone_number",
-    ).value = "";
-
-    document.getElementById(
-      "item_name",
-    ).value = "";
-
-    document.getElementById(
-      "qty",
-    ).value = "1";
-
-    document.getElementById(
-      "unit_price",
-    ).value = "0";
+    transactionItems = [];
 
     document.getElementById(
       "tx_note",
     ).value = "";
 
-    clearVerifiedTransactionCustomer();
-  } catch (err) {
-    hideLoading();
+    clearSelectedCategory();
+    renderTransactionItems();
 
+    await showSuccess(
+      "消費新增成功",
+      `此次消費 ${formatMoney(
+        data.total_amount,
+      )}`,
+    );
+  } catch (err) {
     showError(
       "新增消費失敗",
       err,
     );
   } finally {
     isCreatingTransaction = false;
-  }
-}
-
-async function listTransactions() {
-  const el =
-    document.getElementById("tx-result");
-
-  const phoneNumber = document
-    .getElementById("tx_history_phone")
-    .value
-    .trim();
-
-  if (!phoneNumber) {
-    el.textContent = "";
-
-    showError(
-      "欄位未完成",
-      "請輸入客戶手機",
-    );
-
-    return;
-  }
-
-  showLoading("讀取消費紀錄中...");
-
-  try {
-    const customer = await api(
-      `/customers/by-phone/${encodeURIComponent(phoneNumber)}`,
-      {
-        showLoading: false,
-      },
-    );
-
-    const data = await api(
-      `/transactions/customer/${customer.id}`,
-      {
-        showLoading: false,
-      },
-    );
-
-    hideLoading();
-
-    el.textContent =
-      JSON.stringify(data, null, 2);
-  } catch (err) {
-    hideLoading();
-    el.textContent = "";
-
-    showError(
-      "讀取消費紀錄失敗",
-      err,
-    );
-  }
-}
-
-async function loadCatalogItems() {
-  const tbody =
-    document.getElementById(
-      "catalog-items-table",
-    );
-
-  if (!tbody) return [];
-
-  try {
-    const data = await api("/items");
-
-    tbody.innerHTML = "";
-
-    for (const item of data) {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${escapeHtml(item.name)}</td>
-        <td>${escapeHtml(item.default_price)}</td>
-        <td>
-          <button
-            type="button"
-            onclick="deleteCatalogItem(${item.id})"
-          >刪除</button>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-    }
-
-    return data;
-  } catch (err) {
-    showError(
-      "讀取消費項目失敗",
-      err,
-    );
-
-    return [];
-  }
-}
-
-async function createCatalogItem() {
-  try {
-    const payload = {
-      name: document
-        .getElementById("catalog_item_name")
-        .value
-        .trim(),
-
-      default_price: Number(
-        document
-          .getElementById("catalog_item_price")
-          .value || 0,
-      ),
-
-      description:
-        document
-          .getElementById(
-            "catalog_item_description",
-          )
-          .value
-          .trim() || null,
-    };
-
-    const data = await api(
-      "/items",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      },
-    );
-
-    await showSuccess(
-      "消費項目新增成功",
-      `${data.name} / ID ${data.id}`,
-    );
-
-    document.getElementById(
-      "catalog_item_name",
-    ).value = "";
-
-    document.getElementById(
-      "catalog_item_price",
-    ).value = "0";
-
-    document.getElementById(
-      "catalog_item_description",
-    ).value = "";
-
-    await refreshCatalogItems();
-  } catch (err) {
-    showError(
-      "消費項目新增失敗",
-      err,
-    );
   }
 }
 
@@ -1189,9 +1577,19 @@ async function initItemsPage() {
 }
 
 async function initTransactionsPage() {
-  if (await checkLoginStatus(true)) {
-    await refreshCatalogItems();
-  }
+  // if (await checkLoginStatus(true)) {
+  //   await refreshCatalogItems();
+  // }
+  const loggedIn =
+    await checkLoginStatus(true);
+
+  if (!loggedIn) return;
+
+  transactionItems = [];
+  selectedTransactionCustomer = null;
+  customerHistoryTotal = 0;
+
+  renderTransactionItems();
 }
 
 async function listUsers() {

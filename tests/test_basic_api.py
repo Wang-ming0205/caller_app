@@ -22,33 +22,31 @@ def test_home(client):
     assert response.status_code == 200
 
 
-def test_transaction_page_uses_phone_and_allows_free_item_input(client):
-    # response = client.get("/transactions")
-
-    # assert response.status_code == 200
-    # assert 'id="tx_phone_number"' in response.text
-    # assert 'id="item_name"' in response.text
-    # assert 'id="catalog_item_id"' not in response.text
+def test_transaction_page_has_three_main_sections(client):
     response = client.get("/transactions")
 
     assert response.status_code == 200
 
     html = response.text
 
-    # 使用手機查詢客戶
+    assert html.count(
+        'class="card transaction-section"'
+    ) == 3
+
+    # 第一區：查詢客戶
     assert 'id="tx_phone_number"' in html
-
-    # 客戶 ID 由手機查詢結果寫入，不讓使用者手動輸入
     assert 'id="customer_id"' in html
-    assert 'type="hidden"' in html
 
-    # 消費項目可以選擇常用項目，也可以直接輸入臨時項目
-    assert 'id="item_name"' in html
-    assert 'id="catalog-item-suggestions"' in html
+    # 第二區：四個消費分類
+    assert 'data-category="剪"' in html
+    assert 'data-category="洗"' in html
+    assert 'data-category="染"' in html
+    assert 'data-category="燙"' in html
 
-    # 不再使用舊版 select 下拉選單
-    assert 'id="catalog_item_id"' not in html
-
+    # 第三區：此次消費與總消費
+    assert 'id="current-spending"' in html
+    assert 'id="total-spending"' in html
+    assert 'id="current-items-table"' in html
 
 def test_customer_create_page_marks_core_fields_required(client):
     response = client.get("/customers/new")
@@ -586,6 +584,57 @@ def test_create_transaction_with_invalid_amount(
                     "unit_price": -100,
                 }
             ],
+        },
+    )
+
+    assert response.status_code == 422
+
+@pytest.mark.parametrize(
+    "invalid_name",
+    [
+        "@@@",
+        "!!!",
+        "12345",
+        "王小明@@",
+    ],
+)
+def test_create_customer_with_invalid_name(
+    client,
+    auth_headers,
+    invalid_name,
+):
+    response = client.post(
+        "/api/customers",
+        headers=auth_headers,
+        json={
+            "name": invalid_name,
+            "phone_number": generate_phone_number(),
+            "birthday": "1990-01-01",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "invalid_name",
+    [
+        "@@@",
+        "!!!",
+        "12345",
+    ],
+)
+def test_update_customer_with_invalid_name(
+    client,
+    auth_headers,
+    sample_customer,
+    invalid_name,
+):
+    response = client.put(
+        f"/api/customers/{sample_customer['id']}",
+        headers=auth_headers,
+        json={
+            "name": invalid_name,
         },
     )
 

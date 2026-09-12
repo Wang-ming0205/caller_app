@@ -1,12 +1,21 @@
 import re
 from datetime import date, datetime
 from decimal import Decimal
-
 from pydantic import BaseModel, Field, field_validator
 
 
 TAIWAN_MOBILE_PATTERN = re.compile(r"09\d{8}")
 
+# 姓名允許：
+# 中文、英文、空格、連字號、單引號、中間點
+CUSTOMER_NAME_PATTERN = re.compile(
+    r"^[A-Za-z\u4e00-\u9fff·・' \-]+$"
+)
+
+# 姓名至少要真的包含一個中文字或英文字
+CUSTOMER_NAME_CONTENT_PATTERN = re.compile(
+    r"[A-Za-z\u4e00-\u9fff]"
+)
 
 def validate_taiwan_mobile(value: str) -> str:
     value = value.strip()
@@ -16,6 +25,24 @@ def validate_taiwan_mobile(value: str) -> str:
 
     return value
 
+def validate_customer_name(value: str) -> str:
+    value = value.strip()
+
+    if not value:
+        raise ValueError("Name cannot be empty")
+
+    if not CUSTOMER_NAME_PATTERN.fullmatch(value):
+        raise ValueError(
+            "Name can only contain Chinese, English letters, "
+            "spaces, hyphens or middle dots"
+        )
+
+    if not CUSTOMER_NAME_CONTENT_PATTERN.search(value):
+        raise ValueError(
+            "Name must contain at least one Chinese or English letter"
+        )
+
+    return value
 
 class CustomerBase(BaseModel):
     name: str = Field(..., min_length=1)
@@ -27,12 +54,7 @@ class CustomerBase(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        value = value.strip()
-
-        if not value:
-            raise ValueError("Name cannot be empty")
-
-        return value
+        return validate_customer_name(value)
 
     @field_validator("phone_number")
     @classmethod
@@ -57,11 +79,7 @@ class CustomerUpdate(BaseModel):
         if value is None:
             return None
 
-        value = value.strip()
-        if not value:
-            raise ValueError("Name cannot be empty")
-
-        return value
+        return validate_customer_name(value)
 
     @field_validator("phone_number")
     @classmethod

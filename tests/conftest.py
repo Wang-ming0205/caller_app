@@ -95,23 +95,31 @@ def auth_headers(admin_token):
     return {"Authorization": f"Bearer {admin_token}"}
 
 
+# @pytest.fixture
+# def sample_customer(client, auth_headers):
+#     """建立交易測試使用的臨時客戶，手機固定為 10 位純數字。"""
+#     unique_digits = str(uuid4().int)[-8:]
+#     response = client.post("/api/customers",headers=auth_headers,
+#         json={
+#             "name": f"交易測試客戶_{unique_digits}",
+#             "phone_number": f"09{unique_digits}",
+#             "birthday": "1990-01-01",},)
+#     assert response.status_code in (200, 201)
+#     data = response.json()
+#     assert "id" in data
+#     return data
+
 @pytest.fixture
 def sample_customer(client, auth_headers):
-    """建立交易測試使用的臨時客戶，手機固定為 10 位純數字。"""
+    """建立交易測試使用的臨時客戶。"""
     unique_digits = str(uuid4().int)[-8:]
-
-    response = client.post(
-        "/api/customers",
-        headers=auth_headers,
-        json={
-            "name": f"交易測試客戶_{unique_digits}",
+    response = client.post("/api/customers",headers=auth_headers,
+        json={# 姓名不需要唯一，手機號碼唯一即可
+            "name": "交易測試客戶",
             "phone_number": f"09{unique_digits}",
             "birthday": "1990-01-01",
-        },
-    )
-
+        },)
     assert response.status_code in (200, 201)
-
     data = response.json()
     assert "id" in data
     return data
