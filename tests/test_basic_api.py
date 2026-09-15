@@ -1,6 +1,47 @@
 from random import randint
-
 import pytest
+import re
+# REQUIRED_ELEMENT_IDS = [
+#     "tx_phone_number",
+#     "customer_id",
+#     "transaction-customer-result",
+#     "item_name",
+#     "qty",
+#     "unit_price",
+#     "tx_note",
+#     "tx-result",
+# ]
+
+# REQUIRED_JS_FUNCTIONS = [
+#     "clearVerifiedTransactionCustomer",
+#     "findTransactionCustomer",
+#     "selectServiceCategory",
+#     "applyCatalogItemPrice",
+#     "createTransaction",
+#     "listTransactions",
+# ]
+REQUIRED_ELEMENT_IDS = [
+    "tx_phone_number",
+    "customer_id",
+    "transaction-customer-result",
+    "item_name",
+    "qty",
+    "unit_price",
+    "tx_note",
+    "current-items-table",
+    "current-spending",
+    "total-spending",
+]
+
+REQUIRED_JS_FUNCTIONS = [
+    "clearVerifiedTransactionCustomer",
+    "findTransactionCustomer",
+    "selectServiceCategory",
+    "applyCatalogItemPrice",
+    "addTransactionItem",
+    "createTransaction",
+    "initTransactionsPage",
+]
 
 
 def generate_phone_number():
@@ -639,3 +680,108 @@ def test_update_customer_with_invalid_name(
     )
 
     assert response.status_code == 422
+
+
+def remove_javascript_comments(source: str) -> str:
+    """移除 JS 註解，避免把註解掉的舊函式誤認為有效函式。"""
+    source = re.sub(r"/\*.*?\*/", "", source, flags=re.DOTALL)
+    source = re.sub(r"^\s*//.*$", "", source, flags=re.MULTILINE)
+    return source
+
+
+def get_transaction_page_and_javascript(client):
+    page_response = client.get("/transactions")
+    js_response = client.get("/static/js/app.js")
+
+    assert page_response.status_code == 200
+    assert js_response.status_code == 200
+
+    return page_response.text, js_response.text
+
+
+def test_transaction_page_contains_required_elements(client):
+    html, _ = get_transaction_page_and_javascript(client)
+
+    for element_id in REQUIRED_ELEMENT_IDS:
+        assert (
+            f'id="{element_id}"' in html
+        ), f"交易頁缺少 id={element_id} 的元素"
+
+
+def test_four_service_categories_are_rendered(client):
+    html, _ = get_transaction_page_and_javascript(client)
+
+    for category in ("剪", "洗", "染", "燙"):
+        assert category in html, f"交易頁缺少「{category}」分類"
+
+    handler_count = html.count("selectServiceCategory(")
+
+    assert handler_count >= 4, (
+        "四大分類沒有全部綁定 selectServiceCategory()，"
+        f"目前只找到 {handler_count} 個"
+    )
+
+
+def test_create_transaction_button_is_wired(client):
+    html, _ = get_transaction_page_and_javascript(client)
+
+    assert 'onclick="createTransaction()"' in html
+    assert "新增消費" in html
+
+
+def test_transaction_page_javascript_functions_exist(client):
+    _, javascript = get_transaction_page_and_javascript(client)
+    active_javascript = remove_javascript_comments(javascript)
+
+    for function_name in REQUIRED_JS_FUNCTIONS:
+        pattern = (
+            rf"\b(?:async\s+)?function\s+"
+            rf"{re.escape(function_name)}\s*\("
+        )
+
+        assert re.search(pattern, active_javascript), (
+            f"app.js 缺少有效函式：{function_name}()，"
+            "可能是函式被刪除、改名或註解掉"
+        )
+
+
+def test_required_javascript_functions_are_not_duplicated(client):
+    _, javascript = get_transaction_page_and_javascript(client)
+    active_javascript = remove_javascript_comments(javascript)
+
+    for function_name in REQUIRED_JS_FUNCTIONS:
+        pattern = (
+            rf"\b(?:async\s+)?function\s+"
+            rf"{re.escape(function_name)}\s*\("
+        )
+
+        definitions = re.findall(pattern, active_javascript)
+
+        assert len(definitions) == 1, (
+            f"{function_name}() 應該只有一個有效版本，"
+            f"目前找到 {len(definitions)} 個"
+        )
+
+
+def test_html_handlers_match_javascript_functions(client):
+    html, javascript = get_transaction_page_and_javascript(client)
+    active_javascript = remove_javascript_comments(javascript)
+
+    handlers_used_by_html = {
+        function_name
+        for function_name in REQUIRED_JS_FUNCTIONS
+        if f"{function_name}(" in html
+    }
+
+    assert handlers_used_by_html, "交易頁沒有找到任何 JavaScript handler"
+
+    for function_name in handlers_used_by_html:
+        pattern = (
+            rf"\b(?:async\s+)?function\s+"
+            rf"{re.escape(function_name)}\s*\("
+        )
+
+        assert re.search(pattern, active_javascript), (
+            f"HTML 有呼叫 {function_name}()，"
+            "但是 app.js 沒有對應的有效函式"
+        )
