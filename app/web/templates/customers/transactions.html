@@ -1,103 +1,4 @@
-{#{% extends "base.html" %}
-{% block content %}
-<style>
-  .transactions-layout {
-    display: grid;
-    grid-template-columns: minmax(380px, 448px) minmax(420px, 1fr);
-    gap: 16px;
-    align-items: start;
-  }
-
-  .transactions-layout .card {
-    width: auto;
-    max-width: none;
-    margin: 0;
-  }
-
-  .transactions-layout .table-wrap {
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .transactions-layout table {
-    width: 100%;
-  }
-
-  .transaction-history {
-    margin-top: 16px;
-  }
-
-  @media (max-width: 1100px) {
-    .transactions-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-
-<div class="transactions-layout">
-<div class="card">
-  <h2>新增消費</h2>
-  <p class="hint">輸入手機查出客戶，再選擇或直接輸入消費項目。</p>
-
-  <label>客戶手機 *</label>
-  <div class="row">
-    <input id="tx_phone_number" placeholder="0912345678"
-           oninput="clearVerifiedTransactionCustomer()"
-           onkeydown="if(event.key==='Enter') findTransactionCustomer()" required>
-    <button type="button" onclick="findTransactionCustomer()">查詢客戶</button>
-  </div>
-  <input id="customer_id" type="hidden">
-  <div id="transaction-customer-result" class="message hidden"></div>
-
-  <label>消費項目 *</label>
-  <input id="item_name" list="catalog-item-suggestions" placeholder="例如：剪髮"
-         oninput="applyCatalogItemPrice()" required>
-  <datalist id="catalog-item-suggestions"></datalist>
-  <p class="hint">可選擇常用項目，也可以直接輸入臨時項目。</p>
-
-  <label>數量 *</label>
-  <input id="qty" type="number" value="1" min="1" required>
-  <label>單價 *</label>
-  <input id="unit_price" type="number" value="500" min="0" required>
-  <label>備註</label>
-  <textarea id="tx_note" placeholder="剪髮＋洗髮"></textarea>
-  <button type="button" onclick="createTransaction()">新增消費</button>
-</div>
-
-<div class="card">
-  <h2>常用消費項目</h2>
-  <p class="hint">在這裡新增後，上方會立刻出現在項目建議中。</p>
-  <label>項目名稱 *</label>
-  <input id="catalog_item_name" placeholder="例如：剪髮" required>
-  <label>預設價格 *</label>
-  <input id="catalog_item_price" type="number" value="0" min="0" required>
-  <label>說明</label>
-  <input id="catalog_item_description" placeholder="選填">
-  <button type="button" onclick="createCatalogItem()">新增項目</button>
-
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>項目</th><th>預設價格</th><th>操作</th></tr></thead>
-      <tbody id="catalog-items-table"></tbody>
-    </table>
-  </div>
-</div>
-</div>
-
-<div class="card transaction-history">
-  <h2>查詢客戶消費紀錄</h2>
-  <label>客戶手機</label>
-  <input id="tx_history_phone" placeholder="輸入客戶手機"
-         onkeydown="if(event.key==='Enter') listTransactions()">
-  <button type="button" onclick="listTransactions()">查詢</button>
-  <pre id="tx-result"></pre>
-</div>
-{% endblock %}
-{% block scripts %}<script>initTransactionsPage();</script>{% endblock %}
-#}
-
 {% extends "base.html" %}
-
 {% block content %}
 <style>
   .transaction-page {
@@ -113,22 +14,67 @@
     margin-bottom: 6px;
   }
 
-  .category-buttons {
+  .category-buttons,
+  .service-buttons,
+  .length-buttons {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: 10px;
     margin: 16px 0;
   }
 
+  .category-buttons {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .service-buttons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .length-buttons {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
   .category-buttons button {
-    min-height: 68px;
-    font-size: 22px;
+    min-height: 62px;
+    font-size: 20px;
     font-weight: 700;
   }
 
-  .category-buttons button.selected {
+  .service-buttons button,
+  .length-buttons button {
+    min-height: 52px;
+  }
+
+  .category-buttons button.selected,
+  .service-buttons button.selected,
+  .length-buttons button.selected {
     background: #0f766e;
+    color: white;
     outline: 3px solid #99f6e4;
+  }
+
+  .selection-panel {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  .selection-panel h3 {
+    margin-top: 0;
+  }
+
+  .selected-service-summary {
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 10px;
+    background: #ecfeff;
+    font-weight: 700;
+  }
+
+  .hidden {
+    display: none !important;
   }
 
   .amount-summary {
@@ -153,8 +99,21 @@
     margin-top: 16px;
   }
 
+  .current-items-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
   @media (max-width: 760px) {
     .category-buttons {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .service-buttons {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .length-buttons {
       grid-template-columns: repeat(2, 1fr);
     }
 
@@ -203,60 +162,83 @@
     ></p>
   </div>
 
-  <!-- DIV 2：四個大分類 -->
+  <!-- DIV 2：快速選擇 -->
   <div class="card transaction-section">
-    <h2>消費分類</h2>
+    <h2>快速選擇</h2>
 
     <p class="hint">
-      選擇剪、洗、染、燙，再輸入數量與價格。
+      先選服務分類，再選療程及髮長；價格會自動帶入，也可以手動修改。
     </p>
 
     <section class="category-buttons">
-      <button
-        type="button"
-        data-category="剪"
-        onclick="selectServiceCategory('剪', this)"
-      >
+      <button type="button" data-category="剪"
+              onclick="selectServiceCategory('剪', this)">
         剪
       </button>
 
-      <button
-        type="button"
-        data-category="洗"
-        onclick="selectServiceCategory('洗', this)"
-      >
+      <button type="button" data-category="洗"
+              onclick="selectServiceCategory('洗', this)">
         洗
       </button>
 
-      <button
-        type="button"
-        data-category="染"
-        onclick="selectServiceCategory('染', this)"
-      >
+      <button type="button" data-category="染"
+              onclick="selectServiceCategory('染', this)">
         染
       </button>
 
-      <button
-        type="button"
-        data-category="燙"
-        onclick="selectServiceCategory('燙', this)"
-      >
+      <button type="button" data-category="燙"
+              onclick="selectServiceCategory('燙', this)">
         燙
       </button>
+
+      <button type="button" data-category="護髮"
+              onclick="selectServiceCategory('護髮', this)">
+        護髮
+      </button>
+
+      <button type="button" data-category="頭皮"
+              onclick="selectServiceCategory('頭皮', this)">
+        頭皮
+      </button>
+
+      <button type="button" data-category="臉部"
+              onclick="selectServiceCategory('臉部', this)">
+        臉部
+      </button>
+
+      <button type="button" data-category="其他"
+              onclick="selectServiceCategory('其他', this)">
+        其他
+      </button>
     </section>
+
+    <div id="service-selection-panel" class="selection-panel hidden">
+      <h3>選擇服務</h3>
+      <div id="service-buttons" class="service-buttons"></div>
+    </div>
+
+    <div id="length-selection-panel" class="selection-panel hidden">
+      <h3>選擇髮長／規格</h3>
+      <div id="length-buttons" class="length-buttons"></div>
+    </div>
+
+    <div id="selected-service-summary"
+         class="selected-service-summary hidden">
+    </div>
 
     <label for="item_name">本次項目 *</label>
     <input
       id="item_name"
-      placeholder="先選擇上方分類"
+      placeholder="請先選擇分類與服務"
       readonly
     >
+
     <label for="item_description">描述</label>
     <input
       id="item_description"
-      placeholder="例如：剪短一點、補染髮根、自然捲"
+      placeholder="例如：補染髮根、自然捲、指定甜橙精油"
     >
-    
+
     <label for="qty">數量 *</label>
     <input
       id="qty"
@@ -275,6 +257,10 @@
       required
     >
 
+    <p class="hint">
+      標示「起」的項目會先帶入最低價格，現場可依實際情況修改。
+    </p>
+
     <button
       type="button"
       onclick="addTransactionItem()"
@@ -283,26 +269,28 @@
     </button>
   </div>
 
-  <!-- DIV 3：此次消費＋總消費 -->
+  <!-- DIV 3：消費紀錄 -->
   <div class="card transaction-section">
-    <h2>消費紀錄</h2>
+    <h2>本次消費</h2>
 
-    <table>
-      <thead>
-        <tr>
-          <th>項目</th>
-          <th>數量</th>
-          <th>金額</th>
-          <th>操作</th>
-        </tr>
-      </thead>
+    <div class="current-items-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>數量</th>
+            <th>金額</th>
+            <th>操作</th>
+          </tr>
+        </thead>
 
-      <tbody id="current-items-table">
-        <tr>
-          <td colspan="4">尚未加入消費項目</td>
-        </tr>
-      </tbody>
-    </table>
+        <tbody id="current-items-table">
+          <tr>
+            <td colspan="4">尚未加入消費項目</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <section class="amount-summary">
       <p>
@@ -316,10 +304,10 @@
       </p>
     </section>
 
-    <label for="tx_note">備註</label>
+    <label for="tx_note">整筆消費備註</label>
     <textarea
       id="tx_note"
-      placeholder="本次消費備註"
+      placeholder="本次消費的整體備註"
     ></textarea>
 
     <button

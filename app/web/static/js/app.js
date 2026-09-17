@@ -807,6 +807,165 @@ let transactionItems = [];
 let selectedTransactionCustomer = null;
 let customerHistoryTotal = 0;
 
+let selectedServiceCategory = null;
+let selectedService = null;
+let selectedServiceVariant = null;
+
+const SERVICE_CATALOG = {
+  "剪": [
+    {
+      name: "剪髮",
+      startingPrice: 0,
+    },
+  ],
+
+  "洗": [
+    {
+      name: "健康洗",
+      price: 300,
+    },
+    {
+      name: "護色洗",
+      price: 400,
+    },
+    {
+      name: "SPA 輕鬆洗",
+      startingPrice: 0,
+    },
+    {
+      name: "SPA 木梳按摩療程",
+      price: 450,
+    },
+  ],
+
+  "染": [
+    {
+      name: "染髮",
+      prices: {
+        "極短": 1999,
+        "短": 2499,
+        "中": 2999,
+        "長": 3499,
+        "過腰": 3999,
+      },
+      priceSuffix: "起",
+    },
+    {
+      name: "沐浴染",
+      startingPrice: 800,
+    },
+    {
+      name: "去色",
+      startingPrice: 1000,
+    },
+    {
+      name: "補染（不含洗）",
+      startingPrice: 1200,
+    },
+  ],
+
+  "燙": [
+    {
+      name: "冷塑美型燙",
+      prices: {
+        "極短": 2000,
+        "短": 2300,
+        "中": 2600,
+        "長": 2900,
+        "過腰": 3200,
+      },
+      priceSuffix: "起",
+    },
+    {
+      name: "溫塑美型燙",
+      prices: {
+        "極短": 2200,
+        "短": 2600,
+        "中": 3000,
+        "長": 3400,
+        "過腰": 4000,
+      },
+      priceSuffix: "起",
+    },
+    {
+      name: "自然捲矯正加價購",
+      prices: {
+        "輕微": 500,
+        "嚴重": 1000,
+      },
+    },
+    {
+      name: "髮根（不含洗）",
+      startingPrice: 1500,
+    },
+    {
+      name: "瀏海（不含洗）",
+      price: 250,
+    },
+  ],
+
+  "護髮": [
+    {
+      name: "精蛋白系統",
+      prices: {
+        "短": 800,
+        "中": 1000,
+        "長": 1200,
+        "過腰": 1600,
+      },
+      priceSuffix: "起",
+    },
+    {
+      name: "三劍客",
+      prices: {
+        "短": 650,
+        "中": 900,
+        "長": 1100,
+        "過腰": 1500,
+      },
+      priceSuffix: "起",
+    },
+  ],
+
+  "頭皮": [
+    {
+      name: "角質淨化療程",
+      price: 499,
+    },
+    {
+      name: "深層清潔療程",
+      price: 799,
+    },
+    {
+      name: "死海礦泥療程",
+      price: 999,
+    },
+    {
+      name: "夏日海洋療程",
+      price: 999,
+    },
+    {
+      name: "精油按摩療程",
+      price: 1200,
+    },
+  ],
+
+  "臉部": [
+    {
+      name: "臉部深層淨化療程",
+      price: 400,
+    },
+  ],
+
+  "其他": [
+    {
+      name: "其他項目",
+      startingPrice: 0,
+      allowCustomName: true,
+    },
+  ],
+};
+
 function formatMoney(value) {
   const amount = Number(value) || 0;
 
@@ -814,17 +973,73 @@ function formatMoney(value) {
 }
 
 function clearSelectedCategory() {
+  selectedServiceCategory = null;
+  selectedService = null;
+  selectedServiceVariant = null;
+
   document
     .querySelectorAll("[data-category]")
     .forEach((button) => {
       button.classList.remove("selected");
     });
 
+  const serviceButtons =
+    document.getElementById("service-buttons");
+
+  const lengthButtons =
+    document.getElementById("length-buttons");
+
+  const servicePanel =
+    document.getElementById(
+      "service-selection-panel",
+    );
+
+  const lengthPanel =
+    document.getElementById(
+      "length-selection-panel",
+    );
+
+  const summary =
+    document.getElementById(
+      "selected-service-summary",
+    );
+
   const itemName =
     document.getElementById("item_name");
 
+  const itemDescription =
+    document.getElementById(
+      "item_description",
+    );
+
+  if (serviceButtons) {
+    serviceButtons.innerHTML = "";
+  }
+
+  if (lengthButtons) {
+    lengthButtons.innerHTML = "";
+  }
+
+  if (servicePanel) {
+    servicePanel.classList.add("hidden");
+  }
+
+  if (lengthPanel) {
+    lengthPanel.classList.add("hidden");
+  }
+
+  if (summary) {
+    summary.textContent = "";
+    summary.classList.add("hidden");
+  }
+
   if (itemName) {
     itemName.value = "";
+    itemName.readOnly = true;
+  }
+
+  if (itemDescription) {
+    itemDescription.value = "";
   }
 }
 
@@ -933,6 +1148,10 @@ function selectServiceCategory(
   category,
   selectedButton,
 ) {
+  selectedServiceCategory = category;
+  selectedService = null;
+  selectedServiceVariant = null;
+
   document
     .querySelectorAll("[data-category]")
     .forEach((button) => {
@@ -941,14 +1160,238 @@ function selectServiceCategory(
 
   selectedButton.classList.add("selected");
 
+  const itemName =
+    document.getElementById("item_name");
+
+  const unitPrice =
+    document.getElementById("unit_price");
+
+  const lengthPanel =
+    document.getElementById(
+      "length-selection-panel",
+    );
+
+  const lengthButtons =
+    document.getElementById("length-buttons");
+
+  const summary =
+    document.getElementById(
+      "selected-service-summary",
+    );
+
+  itemName.value = "";
+  itemName.readOnly = true;
+  unitPrice.value = "0";
+
+  lengthPanel.classList.add("hidden");
+  lengthButtons.innerHTML = "";
+
+  summary.textContent = "";
+  summary.classList.add("hidden");
+
+  renderServiceButtons(category);
+}
+
+function renderServiceButtons(category) {
+  const panel =
+    document.getElementById(
+      "service-selection-panel",
+    );
+
+  const container =
+    document.getElementById("service-buttons");
+
+  const services =
+    SERVICE_CATALOG[category] || [];
+
+  container.innerHTML = "";
+
+  services.forEach((service, index) => {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.dataset.serviceIndex = String(index);
+    button.textContent =
+      getServiceButtonText(service);
+
+    button.addEventListener("click", () => {
+      selectService(service, button);
+    });
+
+    container.appendChild(button);
+  });
+
+  panel.classList.remove("hidden");
+}
+
+function getServiceButtonText(service) {
+  if (service.prices) {
+    const prices = Object.values(service.prices);
+    const minimumPrice = Math.min(...prices);
+
+    return `${service.name}／${formatMoney(
+      minimumPrice,
+    )}${service.priceSuffix || ""}`;
+  }
+
+  if (service.startingPrice !== undefined) {
+    return `${service.name}／${formatMoney(
+      service.startingPrice,
+    )} 起`;
+  }
+
+  return `${service.name}／${formatMoney(
+    service.price,
+  )}`;
+}
+
+function selectService(service, selectedButton) {
+  selectedService = service;
+  selectedServiceVariant = null;
+
+  document
+    .querySelectorAll("[data-service-index]")
+    .forEach((button) => {
+      button.classList.remove("selected");
+    });
+
+  selectedButton.classList.add("selected");
+
+  const itemName =
+    document.getElementById("item_name");
+
+  const unitPrice =
+    document.getElementById("unit_price");
+
+  const lengthPanel =
+    document.getElementById(
+      "length-selection-panel",
+    );
+
+  const lengthButtons =
+    document.getElementById("length-buttons");
+
+  itemName.value = service.name;
+  itemName.readOnly = !service.allowCustomName;
+
+  lengthButtons.innerHTML = "";
+
+  if (service.prices) {
+    unitPrice.value = "0";
+
+    renderServiceVariants(service);
+    lengthPanel.classList.remove("hidden");
+
+    updateSelectedServiceSummary();
+    return;
+  }
+
+  lengthPanel.classList.add("hidden");
+
+  if (service.startingPrice !== undefined) {
+    unitPrice.value = service.startingPrice;
+  } else {
+    unitPrice.value = service.price;
+  }
+
+  updateSelectedServiceSummary();
+}
+
+function renderServiceVariants(service) {
+  const container =
+    document.getElementById("length-buttons");
+
+  container.innerHTML = "";
+
+  Object.entries(service.prices).forEach(
+    ([variant, price]) => {
+      const button =
+        document.createElement("button");
+
+      button.type = "button";
+      button.dataset.serviceVariant = variant;
+      button.textContent =
+        `${variant}／${formatMoney(price)}`;
+
+      button.addEventListener("click", () => {
+        selectServiceVariant(
+          variant,
+          price,
+          button,
+        );
+      });
+
+      container.appendChild(button);
+    },
+  );
+}
+
+function selectServiceVariant(
+  variant,
+  price,
+  selectedButton,
+) {
+  selectedServiceVariant = variant;
+
+  document
+    .querySelectorAll("[data-service-variant]")
+    .forEach((button) => {
+      button.classList.remove("selected");
+    });
+
+  selectedButton.classList.add("selected");
+
   document.getElementById(
     "item_name",
-  ).value = category;
+  ).value = `${selectedService.name}－${variant}`;
+
+  document.getElementById(
+    "unit_price",
+  ).value = price;
+
+  updateSelectedServiceSummary();
+}
+
+function updateSelectedServiceSummary() {
+  const summary =
+    document.getElementById(
+      "selected-service-summary",
+    );
+
+  if (!selectedService) {
+    summary.textContent = "";
+    summary.classList.add("hidden");
+    return;
+  }
+
+  let text =
+    `已選擇：${selectedServiceCategory}／` +
+    selectedService.name;
+
+  if (selectedServiceVariant) {
+    text += `／${selectedServiceVariant}`;
+  }
+
+  const unitPrice = Number(
+    document.getElementById("unit_price").value,
+  );
+
+  if (Number.isFinite(unitPrice)) {
+    text += `／${formatMoney(unitPrice)}`;
+  }
+
+  summary.textContent = text;
+  summary.classList.remove("hidden");
 }
 
 function addTransactionItem() {
-  const itemName = document
+  let itemName = document
     .getElementById("item_name")
+    .value
+    .trim();
+
+  const itemDescription = document
+    .getElementById("item_description")
     .value
     .trim();
 
@@ -960,10 +1403,40 @@ function addTransactionItem() {
     document.getElementById("unit_price").value,
   );
 
-  if (!itemName) {
+  if (!selectedServiceCategory) {
     showError(
       "尚未選擇分類",
-      "請先選擇剪、洗、染或燙",
+      "請先選擇服務分類",
+    );
+
+    return;
+  }
+
+  if (!selectedService) {
+    showError(
+      "尚未選擇服務",
+      "請選擇本次消費的服務項目",
+    );
+
+    return;
+  }
+
+  if (
+    selectedService.prices &&
+    !selectedServiceVariant
+  ) {
+    showError(
+      "尚未選擇規格",
+      "請選擇髮長或服務規格",
+    );
+
+    return;
+  }
+
+  if (!itemName) {
+    showError(
+      "項目名稱錯誤",
+      "請輸入或選擇消費項目",
     );
 
     return;
@@ -988,6 +1461,22 @@ function addTransactionItem() {
     );
 
     return;
+  }
+
+  if (
+    selectedServiceCategory !== "其他" &&
+    unitPrice === 0
+  ) {
+    showError(
+      "價格未填寫",
+      "請輸入本次服務的實際價格",
+    );
+
+    return;
+  }
+
+  if (itemDescription) {
+    itemName += `（${itemDescription}）`;
   }
 
   transactionItems.push({
