@@ -1,14 +1,143 @@
 {% extends "base.html" %}
-
 {% block content %}
+<style>
+  .customer-summary {
+    display: grid;
+    gap: 14px;
+  }
+
+  .customer-summary-header {
+    padding: 16px;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: #eff6ff;
+  }
+
+  .customer-summary-header h3 {
+    margin: 0 0 6px;
+  }
+
+  .customer-summary-header p {
+    margin: 0;
+  }
+
+  .customer-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .customer-summary-stat {
+    padding: 16px;
+    border-radius: 12px;
+    background: #f1f5f9;
+  }
+
+  .customer-summary-stat span {
+    display: block;
+    color: #64748b;
+    margin-bottom: 5px;
+  }
+
+  .customer-summary-stat strong {
+    font-size: 20px;
+  }
+
+  .customer-history-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .customer-history-entry {
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: white;
+    overflow: hidden;
+  }
+
+  .customer-history-entry summary {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    cursor: pointer;
+    background: #f8fafc;
+  }
+
+  .customer-history-entry summary:hover {
+    background: #eff6ff;
+  }
+
+  .customer-history-detail {
+    padding: 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .customer-history-detail table {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .customer-history-note {
+    margin: 10px 0 0;
+    color: #475569;
+  }
+
+  .customer-summary-empty {
+    padding: 16px;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #64748b;
+  }
+
+  @media (max-width: 700px) {
+    .customer-summary-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .customer-history-entry summary {
+      grid-template-columns: 1fr;
+    }
+  }
+  .history-arrow {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 12px;
+  transition: transform 0.2s ease;  
+  }
+
+  .customer-history-entry[open]
+  .history-arrow {
+    transform: rotate(90deg);
+  }
+</style>
+
 <div class="card">
   <h2>客戶查詢</h2>
 
   <div class="row">
-    <input id="q" placeholder="輸入姓名或手機" onkeydown="if(event.key==='Enter') searchCustomers()">
-    <button onclick="searchCustomers()">查詢</button>
-    <button onclick="loadLatestCustomers()">最新五筆</button>
-    <button onclick="exportCustomersCsv()">匯出 CSV</button>
+    <input
+      id="q"
+      placeholder="輸入客戶 ID、姓名或手機末三／四碼"
+      onkeydown="
+        if (event.key === 'Enter') {
+          searchCustomers();
+        }
+      "
+    >
+
+    <button onclick="searchCustomers()">
+      查詢
+    </button>
+
+    <button onclick="loadLatestCustomers()">
+      最新五筆
+    </button>
+
+    <button onclick="exportCustomersCsv()">
+      匯出 CSV
+    </button>
   </div>
 
   <table>
@@ -22,13 +151,22 @@
         <th>操作</th>
       </tr>
     </thead>
+
     <tbody id="customer-table"></tbody>
   </table>
 </div>
 
 <div class="card">
   <h2>會員摘要</h2>
-  <pre id="summary-result">點「摘要」查看最近消費與總金額。</pre>
+
+  <div
+    id="summary-result"
+    class="customer-summary"
+  >
+    <p class="hint">
+      點「摘要」查看總消費與最近五筆消費紀錄。
+    </p>
+  </div>
 </div>
 {% endblock %}
 

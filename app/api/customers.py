@@ -1,6 +1,5 @@
-from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -12,7 +11,6 @@ from fastapi.responses import StreamingResponse
 from app.api.deps import get_current_user, require_roles, require_customer_access
 from app.core.database import get_db
 from app.models.customer import Customer
-from app.models.transaction import Transaction, TransactionItem
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerOut, CustomerSummaryOut, CustomerUpdate
 from app.services import customer_service
@@ -65,19 +63,26 @@ def create_customer(
     return customer
 
 
-@router.get("/search/list", response_model=list[CustomerOut])
+@router.get(
+    "/search/list",
+    response_model=list[CustomerOut],
+)
 def search_customers(
-    q: str = Query(..., min_length=1),
+    q: str = Query(
+        ...,
+        min_length=1,
+        max_length=100,
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        get_current_user
+    ),
 ):
-    stmt = select(Customer).where(
-        (Customer.name.ilike(f"%{q}%")) |
-        (Customer.phone_number.ilike(f"%{q}%"))
+    return customer_service.search_customers(
+        db=db,
+        keyword=q,
+        limit=20
     )
-    stmt = stmt.order_by(Customer.id.desc()).limit(20)
-    return list(db.execute(stmt).scalars().all())
-
 
 #新增curd.py
 @router.get("/debug/test")
@@ -240,40 +245,53 @@ def get_customer_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    customer = db.get(Customer, customer_id)
-    customer = require_customer_access(customer, current_user)
-
-    last_tx = db.execute(
-        select(Transaction)
-        .where(Transaction.customer_id == customer_id)
-        .order_by(Transaction.record_date.desc(), Transaction.id.desc())
-        .limit(1)
-    ).scalar_one_or_none()
-
-    total_amount = db.execute(
-        select(func.coalesce(func.sum(Transaction.total_amount), 0))
-        .where(Transaction.customer_id == customer_id)
-    ).scalar_one()
-
-    last_items = None
-    last_record = None
-    last_day = None
-
-    if last_tx:
-        items = db.execute(
-            select(TransactionItem.item_name)
-            .where(TransactionItem.transaction_id == last_tx.id)
-        ).scalars().all()
-        last_items = ", ".join(items) if items else None
-        last_record = last_tx.note
-        last_day = last_tx.record_date
-
-    return CustomerSummaryOut(
-        customer_id=customer.id,
-        name=customer.name,
-        phone_number=customer.phone_number,
-        last_record=last_record,
-        last_items=last_items,
-        total_amount=Decimal(total_amount),
-        last_day=last_day,
+    # customer = db.get(Customer, customer_id)
+    # customer = require_customer_access(customer, current_user)
+    customer = customer_service.get_customer_by_id(
+        db=db,
+        customer_id=customer_id,
     )
+    
+    # last_tx = db.execute(
+    #     select(Transaction)
+    #     .where(Transaction.customer_id == customer_id)
+    #     .order_by(Transaction.record_date.desc(), Transaction.id.desc())
+    #     .limit(1)
+    # ).scalar_one_or_none()
+    customer = require_customer_access(
+        customer,
+        current_user,
+    )
+    return customer_service.get_customer_summary(
+        db=db,
+        customer=customer,
+        limit=5,
+    )
+
+    # total_amount = db.execute(
+    #     select(func.coalesce(func.sum(Transaction.total_amount), 0))
+    #     .where(Transaction.customer_id == customer_id)
+    # ).scalar_one()
+
+    # last_items = None
+    # last_record = None
+    # last_day = None
+
+    # if last_tx:
+    #     items = db.execute(
+    #         select(TransactionItem.item_name)
+    #         .where(TransactionItem.transaction_id == last_tx.id)
+    #     ).scalars().all()
+    #     last_items = ", ".join(items) if items else None
+    #     last_record = last_tx.note
+    #     last_day = last_tx.record_date
+
+    # return CustomerSummaryOut(
+    #     customer_id=customer.id,
+    #     name=customer.name,
+    #     phone_number=customer.phone_number,
+    #     last_record=last_record,
+    #     last_items=last_items,
+    #     total_amount=Decimal(total_amount),
+    #     last_day=last_day,
+    # )

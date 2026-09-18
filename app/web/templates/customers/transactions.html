@@ -121,6 +121,138 @@
       flex-direction: column;
     }
   }
+
+  .transaction-customer-results {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+  .transaction-customer-result-button {
+    width: 100%;
+    padding: 12px 14px;
+    text-align: left;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    cursor: pointer;
+  }
+
+  .transaction-customer-result-button:hover {
+    background: #dbeafe;
+  }
+
+  .transaction-customer-result-button strong {
+    margin-right: 8px;
+  }
+  .customer-summary {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+  .customer-summary-header {
+    padding: 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: #eff6ff;
+  }
+
+  .customer-summary-header h3,
+  .customer-summary-header p {
+    margin: 0;
+  }
+
+  .customer-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .customer-summary-stat {
+    padding: 14px;
+    border-radius: 12px;
+    background: #f1f5f9;
+  }
+
+  .customer-summary-stat span {
+    display: block;
+    color: #64748b;
+    margin-bottom: 5px;
+  }
+
+  .customer-summary-stat strong {
+    font-size: 18px;
+  }
+
+  .customer-history-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .customer-history-entry {
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: white;
+    overflow: hidden;
+  }
+
+  .customer-history-entry summary {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    padding: 12px;
+    cursor: pointer;
+    background: #f8fafc;
+  }
+
+  .customer-history-entry summary:hover {
+    background: #eff6ff;
+  }
+
+  .customer-history-detail {
+    padding: 12px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .customer-history-detail table {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .customer-history-note {
+    color: #475569;
+  }
+
+  .customer-summary-empty {
+    padding: 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    color: #64748b;
+  }
+
+@media (max-width: 700px) {
+  .customer-summary-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-history-entry summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+  .history-arrow {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  }
+
+  .customer-history-entry[open]
+  .history-arrow {
+    transform: rotate(90deg);
+  }
 </style>
 
 <section class="transaction-page">
@@ -130,17 +262,19 @@
     <h2>查詢客戶</h2>
 
     <p class="hint">
-      輸入客戶手機，確認客戶後才能新增消費。
+      輸入客戶 ID、姓名或手機末三／四碼
     </p>
 
-    <label for="tx_phone_number">客戶手機 *</label>
+    <label for="tx_phone_number">客戶 ID／姓名／手機末碼 *</label>
 
     <input
       id="tx_phone_number"
-      placeholder="0912345678"
+      placeholder="0912345678 、 王 、 m 、 M 、678 ,5678"
+      autocomplete="off"
       oninput="clearVerifiedTransactionCustomer()"
       onkeydown="
         if (event.key === 'Enter') {
+          event.preventDefault();
           findTransactionCustomer();
         }
       "
@@ -156,10 +290,19 @@
       查詢客戶
     </button>
 
+  <div
+    id="transaction-customer-results"
+    class="transaction-customer-results hidden"
+  ></div>
+
     <p
       id="transaction-customer-result"
       class="message hidden"
     ></p>
+    <div
+      id="transaction-customer-summary"
+      class="customer-summary hidden"
+    ></div>
   </div>
 
   <!-- DIV 2：快速選擇 -->

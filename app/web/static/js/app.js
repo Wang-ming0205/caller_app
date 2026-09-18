@@ -773,21 +773,428 @@ async function deleteCustomer(id) {
   }
 }
 
+// async function customerSummary(id) {
+//   const el =
+//     document.getElementById("summary-result");
+
+//   if (!el) return;
+
+//   try {
+//     const data = await api(
+//       `/customers/${id}/summary`,
+//     );
+
+//     el.textContent =
+//       JSON.stringify(data, null, 2);
+//   } catch (err) {
+//     el.textContent = err.message;
+//   }
+// }
+
+function formatSummaryDate(value) {
+  if (!value) return "日期不明";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString("zh-TW", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+
+function renderCustomerSummary(
+  summary,
+  target,
+) {
+  const container =
+    typeof target === "string"
+      ? document.getElementById(target)
+      : target;
+
+  if (!container) return;
+
+  const transactions =
+    summary.recent_transactions || [];
+
+  const historyHtml =
+    transactions.length === 0
+      ? `
+        <div class="customer-summary-empty">
+          這位客戶目前沒有消費紀錄。
+        </div>
+      `
+      : transactions.map((transaction) => {
+          const items =
+            transaction.items || [];
+
+          const itemsHtml =
+            items.length === 0
+              ? `
+                <p class="hint">
+                  此筆消費沒有項目明細。
+                </p>
+              `
+              : `
+                <table>
+                  <thead>
+                    <tr>
+                      <th>項目</th>
+                      <th>數量</th>
+                      <th>單價</th>
+                      <th>小計</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    ${items.map((item) => `
+                      <tr>
+                        <td>
+                          ${escapeHtml(item.item_name)}
+                        </td>
+
+                        <td>
+                          ${Number(item.qty) || 0}
+                        </td>
+
+                        <td>
+                          ${formatMoney(item.unit_price)}
+                        </td>
+
+                        <td>
+                          ${formatMoney(item.subtotal)}
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              `;
+
+          const noteHtml = transaction.note
+            ? `
+              <p class="customer-history-note">
+                備註：
+                ${escapeHtml(transaction.note)}
+              </p>
+            `
+            : "";
+
+          return `
+            <details class="customer-history-entry">
+              <summary>
+                <strong>
+                  第 ${transaction.visit_number} 次消費
+                </strong>
+
+                <span>
+                  ${formatSummaryDate(
+                    transaction.record_date,
+                  )}
+                </span>
+
+                <strong>
+                  ${formatMoney(
+                    transaction.total_amount,
+                  )}
+                </strong>
+              </summary>
+
+              <div class="customer-history-detail">
+                ${itemsHtml}
+                ${noteHtml}
+              </div>
+            </details>
+          `;
+        }).join("");
+
+  container.innerHTML = `
+    <section class="customer-summary-header">
+      <h3>
+        ${escapeHtml(summary.name)}
+      </h3>
+
+      <p>
+        ID ${summary.customer_id}
+        ／
+        ${escapeHtml(summary.phone_number)}
+      </p>
+    </section>
+
+    <section class="customer-summary-stats">
+      <div class="customer-summary-stat">
+        <span>總消費次數</span>
+
+        <strong>
+          ${Number(summary.transaction_count) || 0} 次
+        </strong>
+      </div>
+
+      <div class="customer-summary-stat">
+        <span>總消費金額</span>
+
+        <strong>
+          ${formatMoney(summary.total_amount)}
+        </strong>
+      </div>
+    </section>
+
+    <section>
+      <h3>最近五筆消費</h3>
+
+      <div class="customer-history-list">
+        ${historyHtml}
+      </div>
+    </section>
+  `;
+
+  container.classList.remove("hidden");
+}
+
+
+// async function customerSummary(id) {
+//   const container =
+//     document.getElementById("summary-result");
+
+//   if (!container) return;
+
+//   try {
+//     const summary = await api(
+//       `/customers/${id}/summary`,
+//     );
+
+//     renderCustomerSummary(
+//       summary,
+//       container,
+//     );
+
+//     container.scrollIntoView({
+//       behavior: "smooth",
+//       block: "start",
+//     });
+//   } catch (err) {
+//     showError("讀取會員摘要失敗", err);
+//   }
+// }
+function formatSummaryDate(value) {
+  if (!value) return "日期不明";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString("zh-TW", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+
+function renderCustomerSummary(
+  summary,
+  target,
+) {
+  const container =
+    typeof target === "string"
+      ? document.getElementById(target)
+      : target;
+
+  if (!container) return;
+
+  const transactions =
+    summary.recent_transactions || [];
+
+  const historyHtml =
+    transactions.length === 0
+      ? `
+        <div class="customer-summary-empty">
+          這位客戶目前沒有消費紀錄。
+        </div>
+      `
+      : transactions
+          .map((transaction) => {
+            const items =
+              transaction.items || [];
+
+            const itemsHtml =
+              items.length === 0
+                ? `
+                  <p class="hint">
+                    此筆消費沒有項目明細。
+                  </p>
+                `
+                : `
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>項目</th>
+                        <th>數量</th>
+                        <th>單價</th>
+                        <th>小計</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      ${items
+                        .map((item) => `
+                          <tr>
+                            <td>
+                              ${escapeHtml(
+                                item.item_name,
+                              )}
+                            </td>
+
+                            <td>
+                              ${Number(item.qty) || 0}
+                            </td>
+
+                            <td>
+                              ${formatMoney(
+                                item.unit_price,
+                              )}
+                            </td>
+
+                            <td>
+                              ${formatMoney(
+                                item.subtotal,
+                              )}
+                            </td>
+                          </tr>
+                        `)
+                        .join("")}
+                    </tbody>
+                  </table>
+                `;
+
+            const noteHtml =
+              transaction.note
+                ? `
+                  <p class="customer-history-note">
+                    備註：
+                    ${escapeHtml(transaction.note)}
+                  </p>
+                `
+                : "";
+
+            return `
+              <details class="customer-history-entry">
+                <summary>
+                  <strong>
+                    <span class="history-arrow">
+                      ▶
+                    </span>
+
+                    第 ${
+                      Number(
+                        transaction.visit_number,
+                      ) || 0
+                    } 次消費
+                  </strong>
+
+                  <span>
+                    ${formatSummaryDate(
+                      transaction.record_date,
+                    )}
+                  </span>
+
+                  <strong>
+                    ${formatMoney(
+                      transaction.total_amount,
+                    )}
+                  </strong>
+                </summary>
+
+                <div class="customer-history-detail">
+                  ${itemsHtml}
+                  ${noteHtml}
+                </div>
+              </details>
+            `;
+          })
+          .join("");
+
+  container.innerHTML = `
+    <section class="customer-summary-header">
+      <h3>
+        ${escapeHtml(summary.name)}
+      </h3>
+
+      <p>
+        ID ${Number(summary.customer_id)}
+        ／
+        ${escapeHtml(summary.phone_number)}
+      </p>
+    </section>
+
+    <section class="customer-summary-stats">
+      <div class="customer-summary-stat">
+        <span>總消費次數</span>
+
+        <strong>
+          ${
+            Number(summary.transaction_count) || 0
+          } 次
+        </strong>
+      </div>
+
+      <div class="customer-summary-stat">
+        <span>總消費金額</span>
+
+        <strong>
+          ${formatMoney(summary.total_amount)}
+        </strong>
+      </div>
+    </section>
+
+    <section>
+      <h3>最近五筆消費</h3>
+
+      <div class="customer-history-list">
+        ${historyHtml}
+      </div>
+    </section>
+  `;
+
+  container.classList.remove("hidden");
+}
+
+
 async function customerSummary(id) {
-  const el =
+  const container =
     document.getElementById("summary-result");
 
-  if (!el) return;
+  if (!container) return;
 
   try {
-    const data = await api(
+    const summary = await api(
       `/customers/${id}/summary`,
     );
 
-    el.textContent =
-      JSON.stringify(data, null, 2);
+    renderCustomerSummary(
+      summary,
+      container,
+    );
+
+    container.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   } catch (err) {
-    el.textContent = err.message;
+    showError(
+      "讀取會員摘要失敗",
+      err,
+    );
   }
 }
 
@@ -806,6 +1213,7 @@ let isCreatingTransaction = false;
 let transactionItems = [];
 let selectedTransactionCustomer = null;
 let customerHistoryTotal = 0;
+let transactionCustomerSearchResults = [];
 
 let selectedServiceCategory = null;
 let selectedService = null;
@@ -1043,23 +1451,80 @@ function clearSelectedCategory() {
   }
 }
 
+// function clearVerifiedTransactionCustomer() {
+//   const customerId =
+//     document.getElementById("customer_id");
+
+//   const selectedResult  = document.getElementById(
+//     "transaction-customer-result",
+//   );
+
+//  const searchResults = document.getElementById(
+//     "transaction-customer-results",
+//   );
+
+
+// if (customerId) {
+//     customerId.value = "";
+//   }
+
+//   if (selectedResult) {
+//     selectedResult.textContent = "";
+//     selectedResult.classList.add("hidden");
+//   }
+
+//   if (searchResults) {
+//     searchResults.innerHTML = "";
+//     searchResults.classList.add("hidden");
+//   }
+
+//   transactionCustomerSearchResults = [];
+//   selectedTransactionCustomer = null;
+//   customerHistoryTotal = 0;
+//   transactionItems = [];
+
+//   clearSelectedCategory();
+//   renderTransactionItems();
+// }
 function clearVerifiedTransactionCustomer() {
   const customerId =
     document.getElementById("customer_id");
 
-  const result = document.getElementById(
-    "transaction-customer-result",
-  );
+  const selectedResult =
+    document.getElementById(
+      "transaction-customer-result",
+    );
+
+  const searchResults =
+    document.getElementById(
+      "transaction-customer-results",
+    );
+
+  const customerSummary =
+    document.getElementById(
+      "transaction-customer-summary",
+    );
 
   if (customerId) {
     customerId.value = "";
   }
 
-  if (result) {
-    result.textContent = "";
-    result.classList.add("hidden");
+  if (selectedResult) {
+    selectedResult.textContent = "";
+    selectedResult.classList.add("hidden");
   }
 
+  if (searchResults) {
+    searchResults.innerHTML = "";
+    searchResults.classList.add("hidden");
+  }
+
+  if (customerSummary) {
+    customerSummary.innerHTML = "";
+    customerSummary.classList.add("hidden");
+  }
+
+  transactionCustomerSearchResults = [];
   selectedTransactionCustomer = null;
   customerHistoryTotal = 0;
   transactionItems = [];
@@ -1068,6 +1533,40 @@ function clearVerifiedTransactionCustomer() {
   renderTransactionItems();
 }
 
+// function showVerifiedTransactionCustomer(
+//   customer,
+//   summary,
+// ) {
+//   const customerId =
+//     document.getElementById("customer_id");
+
+//   const result = document.getElementById(
+//     "transaction-customer-result",
+//   );
+
+//   selectedTransactionCustomer = customer;
+
+//   customerHistoryTotal =
+//     Number(summary?.total_amount) || 0;
+
+//   if (customerId) {
+//     customerId.value = customer.id;
+//   }
+
+//   if (result) {
+//     result.textContent =
+//       `已選客戶：ID ${customer.id}／` +
+//       `${customer.name}／` +
+//       `${customer.phone_number}`;
+
+//     result.classList.remove(
+//       "hidden",
+//       "error",
+//     );
+//   }
+
+//   renderTransactionItems();
+// }
 function showVerifiedTransactionCustomer(
   customer,
   summary,
@@ -1075,11 +1574,13 @@ function showVerifiedTransactionCustomer(
   const customerId =
     document.getElementById("customer_id");
 
-  const result = document.getElementById(
-    "transaction-customer-result",
-  );
+  const result =
+    document.getElementById(
+      "transaction-customer-result",
+    );
 
   selectedTransactionCustomer = customer;
+
   customerHistoryTotal =
     Number(summary?.total_amount) || 0;
 
@@ -1089,8 +1590,9 @@ function showVerifiedTransactionCustomer(
 
   if (result) {
     result.textContent =
-      `客戶：${customer.name}／` +
-      `手機：${customer.phone_number}`;
+      `已選客戶：ID ${customer.id}／` +
+      `${customer.name}／` +
+      `${customer.phone_number}`;
 
     result.classList.remove(
       "hidden",
@@ -1098,34 +1600,74 @@ function showVerifiedTransactionCustomer(
     );
   }
 
+  renderCustomerSummary(
+    summary,
+    "transaction-customer-summary",
+  );
+
   renderTransactionItems();
 }
 
-async function findTransactionCustomer() {
-  const phoneInput =
-    document.getElementById("tx_phone_number");
+function renderTransactionCustomerResults(
+  customers,
+) {
+  const container = document.getElementById(
+    "transaction-customer-results",
+  );
 
-  const phoneNumber =
-    phoneInput.value.trim();
+  if (!container) return;
 
-  if (!phoneNumber) {
-    clearVerifiedTransactionCustomer();
+  container.innerHTML = "";
 
-    showError(
-      "欄位未完成",
-      "請輸入客戶手機",
+  if (customers.length === 0) {
+    container.classList.add("hidden");
+    return;
+  }
+
+  for (const customer of customers) {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className =
+      "transaction-customer-result-button";
+
+    button.innerHTML = `
+      <strong>ID ${customer.id}</strong>
+      ${escapeHtml(customer.name)}
+      ／
+      ${escapeHtml(customer.phone_number)}
+    `;
+
+    button.addEventListener("click", () => {
+      selectTransactionCustomer(customer.id);
+    });
+
+    container.appendChild(button);
+  }
+
+  container.classList.remove("hidden");
+}
+
+
+async function selectTransactionCustomer(
+  customerId,
+) {
+  const customer =
+    transactionCustomerSearchResults.find(
+      item =>
+        Number(item.id) === Number(customerId),
     );
 
-    return null;
+  if (!customer) {
+    showError(
+      "選擇失敗",
+      "找不到選擇的客戶資料",
+    );
+
+    return;
   }
 
   try {
-    const customer = await api(
-      `/customers/by-phone/${
-        encodeURIComponent(phoneNumber)
-      }`,
-    );
-
     const summary = await api(
       `/customers/${customer.id}/summary`,
     );
@@ -1135,12 +1677,73 @@ async function findTransactionCustomer() {
       summary,
     );
 
-    return customer;
+    const container = document.getElementById(
+      "transaction-customer-results",
+    );
+
+    if (container) {
+      container.innerHTML = "";
+      container.classList.add("hidden");
+    }
   } catch (err) {
     clearVerifiedTransactionCustomer();
-    showError("找不到客戶", err);
 
-    return null;
+    showError(
+      "讀取客戶資料失敗",
+      err,
+    );
+  }
+}
+
+async function findTransactionCustomer() {
+  const queryInput = document.getElementById(
+    "tx_phone_number",
+  );
+  const keyword = queryInput.value.trim();
+
+  if (!keyword) {
+    clearVerifiedTransactionCustomer();
+
+    showError(
+      "欄位未完成",
+      "請輸入客戶 ID、姓名或手機末碼",
+    );
+
+    return [];
+  }
+
+  clearVerifiedTransactionCustomer();
+
+  try {
+    const customers = await api(
+      `/customers/search/list?q=${
+        encodeURIComponent(keyword)
+      }`,
+    );
+
+    transactionCustomerSearchResults = customers;
+
+    if (customers.length === 0) {
+      showError(
+        "找不到客戶",
+        "沒有符合搜尋條件的客戶",
+      );
+
+      return [];
+    }
+
+    renderTransactionCustomerResults(customers);
+
+    return customers;
+  } catch (err) {
+    clearVerifiedTransactionCustomer();
+
+    showError(
+      "查詢客戶失敗",
+      err,
+    );
+
+    return [];
   }
 }
 
@@ -1584,29 +2187,18 @@ function renderTransactionItems() {
 async function createTransaction() {
   if (isCreatingTransaction) return;
 
-  const phoneNumber = document
-    .getElementById("tx_phone_number")
-    .value
-    .trim();
+  const selectedCustomerId = Number(
+    document.getElementById("customer_id").value,
+  );
 
-  if (!selectedTransactionCustomer) {
+  if (
+    !selectedCustomerId ||
+    !selectedTransactionCustomer ||
+    selectedCustomerId !== Number(selectedTransactionCustomer.id)
+  ) {
     showError(
       "尚未確認客戶",
       "請先使用手機號碼查詢客戶",
-    );
-
-    return;
-  }
-
-  if (
-    phoneNumber !==
-    selectedTransactionCustomer.phone_number
-  ) {
-    clearVerifiedTransactionCustomer();
-
-    showError(
-      "客戶資料已變更",
-      "手機號碼變更後，請重新查詢客戶",
     );
 
     return;
@@ -1651,6 +2243,27 @@ async function createTransaction() {
 
     customerHistoryTotal +=
       Number(data.total_amount) || 0;
+
+    try {
+        const updatedSummary = await api(
+          `/customers/${
+            selectedTransactionCustomer.id
+          }/summary`,
+        );
+
+        customerHistoryTotal =
+          Number(updatedSummary.total_amount) || 0;
+
+        renderCustomerSummary(
+          updatedSummary,
+          "transaction-customer-summary",
+        );
+    } catch (summaryError) {
+      console.error(
+        "消費已新增，但摘要更新失敗：",
+        summaryError,
+      );
+    }
 
     transactionItems = [];
 
@@ -1758,9 +2371,6 @@ async function initItemsPage() {
 }
 
 async function initTransactionsPage() {
-  // if (await checkLoginStatus(true)) {
-  //   await refreshCatalogItems();
-  // }
   const loggedIn =
     await checkLoginStatus(true);
 

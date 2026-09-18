@@ -100,11 +100,39 @@ class CustomerOut(CustomerBase):
         from_attributes = True
 
 
+class TransactionItemSummaryOut(BaseModel):
+    id: int
+    item_name: str
+    qty: int
+    unit_price: Decimal
+    subtotal: Decimal
+
+
+class TransactionHistorySummaryOut(BaseModel):
+    id: int
+    visit_number: int
+    total_amount: Decimal
+    note: str | None = None
+    record_date: datetime
+    items: list[TransactionItemSummaryOut] = Field(
+        default_factory=list
+    )
+
+
 class CustomerSummaryOut(BaseModel):
     customer_id: int
     name: str
     phone_number: str
+
+    transaction_count: int
+    total_amount: Decimal
+
+    # 保留舊欄位，避免原本測試或其他前端壞掉
     last_record: str | None = None
     last_items: str | None = None
-    total_amount: Decimal
     last_day: datetime | None = None
+
+    recent_transactions: list[
+        TransactionHistorySummaryOut
+    ] = Field(default_factory=list)
+
