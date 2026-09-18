@@ -682,6 +682,15 @@ function renderCustomerTable(customers) {
         </select>
       </td>
 
+
+      <td>
+        <input
+          id="birthday-${customer.id}"
+          type="date"
+          value="${escapeHtml(customer.birthday || "")}"
+        >
+      </td>
+
       <td>
         <input
           id="note-${customer.id}"
@@ -726,6 +735,10 @@ async function updateCustomer(id) {
         .getElementById(`phone-${id}`)
         .value
         .trim(),
+        
+      birthday:document
+        .getElementById(`birthday-${id}`)
+        .value || null,
 
       gender:
         document.getElementById(`gender-${id}`)
@@ -924,6 +937,15 @@ function renderCustomerSummary(
         ID ${summary.customer_id}
         ／
         ${escapeHtml(summary.phone_number)}
+      </p>
+
+      <p>
+        生日：
+        ${
+          summary.birthday
+            ? escapeHtml(summary.birthday)
+            : "未填寫"
+        }
       </p>
     </section>
 
