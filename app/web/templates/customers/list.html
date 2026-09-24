@@ -111,6 +111,92 @@
   .history-arrow {
     transform: rotate(90deg);
   }
+
+.customer-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.customer-card {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: white;
+}
+
+.customer-card-title h3 {
+  margin: 0 0 5px;
+}
+
+.customer-card-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.customer-field {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.customer-field span {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.customer-field strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.customer-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.delete-button {
+  background: #dc2626;
+}
+
+.customer-list-empty {
+  padding: 18px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+}
+
+/* 手機版 */
+@media (max-width: 700px) {
+  .customer-card-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .customer-card-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .customer-card-actions button {
+    width: 100%;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+@media (max-width: 420px) {
+  .customer-card-fields {
+    grid-template-columns: 1fr;
+    }
+  }
+
 </style>
 
 <div class="card">
@@ -140,7 +226,7 @@
     </button>
   </div>
 
-  <table>
+{#  <table>
     <thead>
       <tr>
         <th>ID</th>
@@ -154,7 +240,84 @@
     </thead>
 
     <tbody id="customer-table"></tbody>
-  </table>
+  </table>#}
+
+
+<div
+  id="customer-list"
+  class="customer-list"
+></div>
+
+<!--
+  template 不會直接顯示。
+  app.js 取得客戶資料後，會複製這張卡片。
+-->
+  <template id="customer-card-template">
+    <article class="customer-card">
+
+      <div class="customer-card-title">
+        <div>
+          <h3 data-field="name"></h3>
+
+          <span class="hint">
+            ID：
+            <span data-field="id"></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="customer-card-fields">
+
+        <div class="customer-field">
+          <span>手機</span>
+          <strong data-field="phone"></strong>
+        </div>
+
+        <div class="customer-field">
+          <span>性別</span>
+          <strong data-field="gender"></strong>
+        </div>
+
+        <div class="customer-field">
+          <span>生日</span>
+          <strong data-field="birthday"></strong>
+        </div>
+
+        <div class="customer-field">
+          <span>備註</span>
+          <strong data-field="note"></strong>
+        </div>
+
+      </div>
+
+      <div class="customer-card-actions">
+        <button
+          type="button"
+          data-action="edit"
+        >
+          編輯
+        </button>
+
+        <button
+          type="button"
+          class="secondary"
+          data-action="summary"
+        >
+          摘要
+        </button>
+
+        <button
+          type="button"
+          class="delete-button"
+          data-action="delete"
+        >
+          刪除
+        </button>
+      </div>
+
+    </article>
+  </template>
+
 </div>
 
 <div class="card">

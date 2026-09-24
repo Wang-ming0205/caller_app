@@ -591,10 +591,10 @@ async function createCustomer() {
 }
 
 async function loadLatestCustomers() {
-  const tbody =
-    document.getElementById("customer-table");
+  const list =
+    document.getElementById("customer-list");
 
-  if (!tbody) return;
+  if (!list) return;
 
   try {
     const data = await api("/customers/");
@@ -630,127 +630,347 @@ async function searchCustomers() {
 }
 
 function renderCustomerTable(customers) {
-  const tbody =
-    document.getElementById("customer-table");
+  const list =
+    document.getElementById("customer-list");
+  const template =
+    document.getElementById(
+      "customer-card-template",
+    );
 
-  if (!tbody) return;
+  if (!list || !template) return;
 
-  tbody.innerHTML = "";
+  
+  list.innerHTML = "";
+  if (!customers.length) {
+    const empty =
+      document.createElement("p");
+
+    empty.className =
+      "customer-list-empty";
+
+    empty.textContent =
+      "查無客戶資料。";
+
+    list.appendChild(empty);
+    return;
+  }  
 
   for (const customer of customers) {
-    const tr = document.createElement("tr");
+    const card = 
+      template.content
+        .firstElementChild
+        .cloneNode(true);
+    card.querySelector(
+          "[data-field='id']",
+        ).textContent = customer.id;
 
-    tr.innerHTML = `
-      <td>${customer.id}</td>
+        card.querySelector(
+          "[data-field='name']",
+        ).textContent = customer.name;
 
-      <td>
-        <input
-          id="name-${customer.id}"
-          value="${escapeHtml(customer.name)}"
-        >
-      </td>
+        card.querySelector(
+          "[data-field='phone']",
+        ).textContent =
+          customer.phone_number;
 
-      <td>
-        <input
-          id="phone-${customer.id}"
-          value="${escapeHtml(customer.phone_number)}"
-        >
-      </td>
+        card.querySelector(
+          "[data-field='gender']",
+        ).textContent =
+          customer.gender || "未填";
 
-      <td>
-        <select id="gender-${customer.id}">
-          <option
-            value=""
-            ${!customer.gender ? "selected" : ""}
-          >
-            未填
-          </option>
+        card.querySelector(
+          "[data-field='birthday']",
+        ).textContent =
+          customer.birthday || "未填";
 
-          <option
-            value="男"
-            ${customer.gender === "男" ? "selected" : ""}
-          >
-            男
-          </option>
+        card.querySelector(
+          "[data-field='note']",
+        ).textContent =
+          customer.note || "無";
 
-          <option
-            value="女"
-            ${customer.gender === "女" ? "selected" : ""}
-          >
-            女
-          </option>
-        </select>
-      </td>
+        // ===== 編輯按鈕 =====
+        card.querySelector(
+          "[data-action='edit']",
+        ).addEventListener("click", () => {
+          openCustomerEdit(customer.id);
+        });
+
+        // ===== 摘要按鈕 =====
+        card.querySelector(
+          "[data-action='summary']",
+        ).addEventListener("click", () => {
+          customerSummary(customer.id);
+        });
+
+        // ===== 刪除按鈕 =====
+        card.querySelector(
+          "[data-action='delete']",
+        ).addEventListener("click", () => {
+          deleteCustomer(customer.id);
+        });
+
+        list.appendChild(card);
+      }
+    }        
+//     tr.innerHTML = `
+//       <td>${customer.id}</td>
+
+//       <td>
+//         <input
+//           id="name-${customer.id}"
+//           value="${escapeHtml(customer.name)}"
+//         >
+//       </td>
+
+//       <td>
+//         <input
+//           id="phone-${customer.id}"
+//           value="${escapeHtml(customer.phone_number)}"
+//         >
+//       </td>
+
+//       <td>
+//         <select id="gender-${customer.id}">
+//           <option
+//             value=""
+//             ${!customer.gender ? "selected" : ""}
+//           >
+//             未填
+//           </option>
+
+//           <option
+//             value="男"
+//             ${customer.gender === "男" ? "selected" : ""}
+//           >
+//             男
+//           </option>
+
+//           <option
+//             value="女"
+//             ${customer.gender === "女" ? "selected" : ""}
+//           >
+//             女
+//           </option>
+//         </select>
+//       </td>
 
 
-      <td>
-        <input
-          id="birthday-${customer.id}"
-          type="date"
-          value="${escapeHtml(customer.birthday || "")}"
-        >
-      </td>
+//       <td>
+//         <input
+//           id="birthday-${customer.id}"
+//           type="date"
+//           value="${escapeHtml(customer.birthday || "")}"
+//         >
+//       </td>
 
-      <td>
-        <input
-          id="note-${customer.id}"
-          value="${escapeHtml(customer.note || "")}"
-        >
-      </td>
+//       <td>
+//         <input
+//           id="note-${customer.id}"
+//           value="${escapeHtml(customer.note || "")}"
+//         >
+//       </td>
 
-      <td>
-        <button
-          onclick="updateCustomer(${customer.id})"
-        >
-          儲存
-        </button>
+//       <td>
+//         <button
+//           onclick="updateCustomer(${customer.id})"
+//         >
+//           儲存
+//         </button>
 
-        <button
-          onclick="customerSummary(${customer.id})"
-        >
-          摘要
-        </button>
+//         <button
+//           onclick="customerSummary(${customer.id})"
+//         >
+//           摘要
+//         </button>
 
-        <button
-          onclick="deleteCustomer(${customer.id})"
-        >
-          刪除
-        </button>
-      </td>
-    `;
+//         <button
+//           onclick="deleteCustomer(${customer.id})"
+//         >
+//           刪除
+//         </button>
+//       </td>
+//     `;
 
-    tbody.appendChild(tr);
+//     tbody.appendChild(tr);
+//   }
+// }
+
+// async function updateCustomer(id) {
+//   try {
+//     const payload = {
+//       name: document
+//         .getElementById(`name-${id}`)
+//         .value
+//         .trim(),
+
+//       phone_number: document
+//         .getElementById(`phone-${id}`)
+//         .value
+//         .trim(),
+        
+//       birthday:document
+//         .getElementById(`birthday-${id}`)
+//         .value || null,
+
+//       gender:
+//         document.getElementById(`gender-${id}`)
+//           .value || null,
+
+//       note:
+//         document.getElementById(`note-${id}`)
+//           .value || null,
+//     };
+
+//     const data = await api(
+//       `/customers/${id}`,
+//       {
+//         method: "PUT",
+//         body: JSON.stringify(payload),
+//       },
+//     );
+
+//     await showSuccess(
+//       "修改成功",
+//       data.name,
+//     );
+
+//     loadLatestCustomers();
+//   } catch (err) {
+//     showError("修改失敗", err);
+//   }
+// }
+
+// ===== 修改：按編輯後前往獨立表單頁 =====
+function openCustomerEdit(id) {
+  goToPage(
+    `/customers/edit?id=${encodeURIComponent(id)}`,
+  );
+}
+
+
+// ===== 新增：進入編輯頁時讀取客戶資料 =====
+async function initCustomerEditPage() {
+  const ok = await checkLoginStatus(true);
+
+  if (!ok) return;
+
+  const params =
+    new URLSearchParams(
+      window.location.search,
+    );
+
+  const customerId =
+    Number(params.get("id"));
+
+  if (
+    !Number.isInteger(customerId) ||
+    customerId < 1
+  ) {
+    showError(
+      "網址錯誤",
+      "找不到有效的客戶 ID",
+    );
+
+    return;
+  }
+
+  try {
+    const customer = await api(
+      `/customers/${customerId}`,
+    );
+
+    // 把 API 資料放進表單
+    document.getElementById(
+      "customer_id",
+    ).value = customer.id;
+
+    document.getElementById(
+      "edit-name",
+    ).value = customer.name || "";
+
+    document.getElementById(
+      "edit-phone",
+    ).value =
+      customer.phone_number || "";
+
+    document.getElementById(
+      "edit-gender",
+    ).value = customer.gender || "";
+
+    document.getElementById(
+      "edit-birthday",
+    ).value = customer.birthday || "";
+
+    document.getElementById(
+      "edit-note",
+    ).value = customer.note || "";
+
+    // 讀取這位客戶的消費紀錄
+    await loadCustomerTransactions(
+      customerId,
+    );
+  } catch (err) {
+    showError(
+      "讀取客戶失敗",
+      err,
+    );
   }
 }
 
-async function updateCustomer(id) {
+// ===== 新增：送出編輯表單 =====
+async function submitCustomerEdit(event) {
+  event.preventDefault();
+
+  const customerId = Number(
+    document.getElementById(
+      "customer_id",
+    ).value,
+  );
+
+  const name =
+    document.getElementById(
+      "edit-name",
+    ).value.trim();
+
+  const phoneNumber =
+    document.getElementById(
+      "edit-phone",
+    ).value.trim();
+
+  if (!name || !phoneNumber) {
+    showError(
+      "欄位未完成",
+      "姓名與手機不可空白",
+    );
+
+    return;
+  }
+
+  const payload = {
+    name,
+
+    phone_number:
+      phoneNumber,
+
+    gender:
+      document.getElementById(
+        "edit-gender",
+      ).value || null,
+
+    birthday:
+      document.getElementById(
+        "edit-birthday",
+      ).value || null,
+
+    note:
+      document.getElementById(
+        "edit-note",
+      ).value.trim() || null,
+  };
+
   try {
-    const payload = {
-      name: document
-        .getElementById(`name-${id}`)
-        .value
-        .trim(),
-
-      phone_number: document
-        .getElementById(`phone-${id}`)
-        .value
-        .trim(),
-        
-      birthday:document
-        .getElementById(`birthday-${id}`)
-        .value || null,
-
-      gender:
-        document.getElementById(`gender-${id}`)
-          .value || null,
-
-      note:
-        document.getElementById(`note-${id}`)
-          .value || null,
-    };
-
-    const data = await api(
-      `/customers/${id}`,
+    const customer = await api(
+      `/customers/${customerId}`,
       {
         method: "PUT",
         body: JSON.stringify(payload),
@@ -759,13 +979,553 @@ async function updateCustomer(id) {
 
     await showSuccess(
       "修改成功",
-      data.name,
+      customer.name,
     );
 
-    loadLatestCustomers();
+    goToPage("/customers");
+
   } catch (err) {
-    showError("修改失敗", err);
+    showError(
+      "修改失敗",
+      err,
+    );
   }
+}
+
+// ===== 讀取客戶的消費紀錄 =====
+async function loadCustomerTransactions(
+  customerId,
+) {
+  const loading =
+    document.getElementById(
+      "transaction-history-loading",
+    );
+
+  const emptyMessage =
+    document.getElementById(
+      "transaction-history-empty",
+    );
+
+  const historyList =
+    document.getElementById(
+      "transaction-history-list",
+    );
+
+  const historyCount =
+    document.getElementById(
+      "transaction-history-count",
+    );
+  const historyCard =
+    document.getElementById(
+    "transaction-history-card",
+  );
+
+  // 如果目前頁面沒有消費紀錄區塊，
+  // 就不要繼續執行
+  if (
+    !historyCard ||
+    !loading ||
+    !emptyMessage ||
+    !historyList ||
+    !historyCount
+  ) {
+    return;
+  }
+  historyCard.hidden = false;
+  loading.hidden = false;
+  emptyMessage.hidden = true;
+  historyList.replaceChildren();
+  historyCount.textContent = "讀取中……";
+
+  try {
+    console.log(
+    "準備讀取消費紀錄，客戶 ID：",
+      customerId,
+    );
+
+    const transactions = await api(
+      `/transactions/customer/${customerId}`,
+    );
+
+      loading.hidden = true;
+
+      historyCount.textContent =
+        `共 ${transactions.length} 筆`;
+
+    loading.hidden = true;
+
+    historyCount.textContent =
+      `共 ${transactions.length} 筆`;
+
+    if (transactions.length === 0) {
+      emptyMessage.hidden = false;
+      return;
+    }
+
+    for (const transaction of transactions) {
+      renderEditableTransaction(
+        transaction,
+        historyList,
+      );
+    }
+
+  } catch (err) {
+    loading.hidden = true;
+    historyCount.textContent = "讀取失敗";
+
+    showError(
+      "讀取消費紀錄失敗",
+      err,
+    );
+  }
+}
+
+
+// ===== 顯示一筆可以修改的消費紀錄 =====
+function renderEditableTransaction(
+  transaction,
+  historyList,
+) {
+  const template =
+    document.getElementById(
+      "transaction-edit-template",
+    );
+
+  const fragment =
+    template.content.cloneNode(true);
+
+  const card =
+    fragment.querySelector(
+      ".transaction-edit-card",
+    );
+
+  card.dataset.transactionId =
+    transaction.id;
+
+  card.querySelector(
+    '[data-field="transaction-id"]',
+  ).textContent = transaction.id;
+
+  card.querySelector(
+    '[data-field="transaction-id-input"]',
+  ).value = transaction.id;
+
+  card.querySelector(
+    '[data-field="created-at"]',
+  ).textContent = formatTransactionDateTime(
+    transaction.created_at,
+  );
+
+  card.querySelector(
+    '[data-field="record-date"]',
+  ).value = transaction.record_date
+    ? transaction.record_date.slice(0, 10)
+    : "";
+
+  card.querySelector(
+    '[data-field="transaction-note"]',
+  ).value = transaction.note || "";
+
+  const itemsBody =
+    card.querySelector(
+      '[data-field="items-body"]',
+    );
+
+  for (const item of transaction.items || []) {
+    appendTransactionItem(
+      itemsBody,
+      item,
+    );
+  }
+
+  // 正常情況後端一定至少有一個項目，
+  // 這裡只是避免舊資料沒有項目
+  if (!transaction.items?.length) {
+    appendTransactionItem(
+      itemsBody,
+    );
+  }
+
+  const addButton =
+    card.querySelector(
+      '[data-action="add-transaction-item"]',
+    );
+
+  addButton.addEventListener(
+    "click",
+    () => {
+      appendTransactionItem(
+        itemsBody,
+      );
+
+      calculateTransactionTotal(
+        card,
+      );
+    },
+  );
+
+  const saveButton =
+    card.querySelector(
+      '[data-action="save-transaction"]',
+    );
+
+  saveButton.addEventListener(
+    "click",
+    async () => {
+      await saveTransactionEdit(
+        card,
+      );
+    },
+  );
+
+  calculateTransactionTotal(
+    card,
+  );
+
+  historyList.appendChild(
+    fragment,
+  );
+}
+
+
+// ===== 新增一列消費項目 =====
+function appendTransactionItem(
+  itemsBody,
+  item = {},
+) {
+  const template =
+    document.getElementById(
+      "transaction-item-edit-template",
+    );
+
+  const fragment =
+    template.content.cloneNode(true);
+
+  const row =
+    fragment.querySelector("tr");
+
+  const itemNameInput =
+    row.querySelector(
+      '[data-field="item-name"]',
+    );
+
+  const qtyInput =
+    row.querySelector(
+      '[data-field="item-qty"]',
+    );
+
+  const unitPriceInput =
+    row.querySelector(
+      '[data-field="item-unit-price"]',
+    );
+
+  const subtotalInput =
+    row.querySelector(
+      '[data-field="item-subtotal"]',
+    );
+
+  itemNameInput.value =
+    item.item_name || "";
+
+  qtyInput.value =
+    item.qty ?? 1;
+
+  unitPriceInput.value =
+    item.unit_price ?? 0;
+
+  subtotalInput.value =
+    item.subtotal ?? 0;
+
+  const updateTotal = () => {
+    const card =
+      row.closest(
+        ".transaction-edit-card",
+      );
+
+    if (card) {
+      calculateTransactionTotal(
+        card,
+      );
+    }
+  };
+
+  qtyInput.addEventListener(
+    "input",
+    updateTotal,
+  );
+
+  unitPriceInput.addEventListener(
+    "input",
+    updateTotal,
+  );
+
+  const removeButton =
+    row.querySelector(
+      '[data-action="remove-transaction-item"]',
+    );
+
+  removeButton.addEventListener(
+    "click",
+    () => {
+      const rows =
+        itemsBody.querySelectorAll("tr");
+
+      if (rows.length <= 1) {
+        showError(
+          "無法移除",
+          "一筆消費至少要保留一個項目",
+        );
+
+        return;
+      }
+
+      const card =
+        row.closest(
+          ".transaction-edit-card",
+        );
+
+      row.remove();
+
+      if (card) {
+        calculateTransactionTotal(
+          card,
+        );
+      }
+    },
+  );
+
+  itemsBody.appendChild(
+    fragment,
+  );
+}
+
+
+// ===== 計算單筆消費的總金額 =====
+function calculateTransactionTotal(
+  card,
+) {
+  const rows =
+    card.querySelectorAll(
+      '[data-field="items-body"] tr',
+    );
+
+  let totalAmount = 0;
+
+  for (const row of rows) {
+    const qty =
+      Number(
+        row.querySelector(
+          '[data-field="item-qty"]',
+        ).value,
+      ) || 0;
+
+    const unitPrice =
+      Number(
+        row.querySelector(
+          '[data-field="item-unit-price"]',
+        ).value,
+      ) || 0;
+
+    const subtotal =
+      qty * unitPrice;
+
+    row.querySelector(
+      '[data-field="item-subtotal"]',
+    ).value = subtotal.toFixed(2);
+
+    totalAmount += subtotal;
+  }
+
+  card.querySelector(
+    '[data-field="total-amount"]',
+  ).value = totalAmount.toFixed(2);
+
+  return totalAmount;
+}
+
+
+// ===== 儲存單筆消費紀錄 =====
+async function saveTransactionEdit(
+  card,
+) {
+  const transactionId =
+    Number(
+      card.dataset.transactionId,
+    );
+
+  if (
+    !Number.isInteger(transactionId) ||
+    transactionId < 1
+  ) {
+    showError(
+      "修改失敗",
+      "找不到有效的消費紀錄 ID",
+    );
+
+    return;
+  }
+
+  const rows =
+    card.querySelectorAll(
+      '[data-field="items-body"] tr',
+    );
+
+  const items = [];
+
+  for (const row of rows) {
+    const itemName =
+      row.querySelector(
+        '[data-field="item-name"]',
+      ).value.trim();
+
+    const qty =
+      Number(
+        row.querySelector(
+          '[data-field="item-qty"]',
+        ).value,
+      );
+
+    const unitPrice =
+      Number(
+        row.querySelector(
+          '[data-field="item-unit-price"]',
+        ).value,
+      );
+
+    if (!itemName) {
+      showError(
+        "欄位未完成",
+        "消費項目名稱不能空白",
+      );
+
+      return;
+    }
+
+    if (
+      !Number.isInteger(qty) ||
+      qty < 1
+    ) {
+      showError(
+        "數量錯誤",
+        "消費項目數量至少為 1",
+      );
+
+      return;
+    }
+
+    if (
+      !Number.isFinite(unitPrice) ||
+      unitPrice < 0
+    ) {
+      showError(
+        "金額錯誤",
+        "單價不可小於 0",
+      );
+
+      return;
+    }
+
+    items.push({
+      item_name: itemName,
+      qty,
+      unit_price: unitPrice,
+    });
+  }
+
+  const recordDateValue =
+    card.querySelector(
+      '[data-field="record-date"]',
+    ).value;
+
+  const note =
+    card.querySelector(
+      '[data-field="transaction-note"]',
+    ).value.trim();
+
+  const payload = {
+    note: note || null,
+
+    record_date: recordDateValue
+      ? `${recordDateValue}T00:00:00`
+      : null,
+
+    items,
+  };
+
+  const saveButton =
+    card.querySelector(
+      '[data-action="save-transaction"]',
+    );
+
+  const message =
+    card.querySelector(
+      '[data-field="transaction-message"]',
+    );
+
+  saveButton.disabled = true;
+  saveButton.textContent = "儲存中……";
+
+  message.hidden = false;
+  message.textContent =
+    "正在儲存消費紀錄……";
+
+  try {
+    const updatedTransaction =
+      await api(
+        `/transactions/${transactionId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        },
+      );
+
+    card.querySelector(
+      '[data-field="total-amount"]',
+    ).value =
+      Number(
+        updatedTransaction.total_amount,
+      ).toFixed(2);
+
+    message.textContent =
+      "這筆消費紀錄已儲存。";
+
+    await showSuccess(
+      "修改成功",
+      `消費紀錄 #${transactionId}`,
+    );
+
+  } catch (err) {
+    message.textContent =
+      "消費紀錄儲存失敗。";
+
+    showError(
+      "修改消費紀錄失敗",
+      err,
+    );
+
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent =
+      "儲存這筆消費";
+  }
+}
+
+
+// ===== 顯示建立時間 =====
+function formatTransactionDateTime(
+  value,
+) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString(
+    "zh-TW",
+  );
 }
 
 async function deleteCustomer(id) {
@@ -785,24 +1545,6 @@ async function deleteCustomer(id) {
     showError("刪除失敗", err);
   }
 }
-
-// async function customerSummary(id) {
-//   const el =
-//     document.getElementById("summary-result");
-
-//   if (!el) return;
-
-//   try {
-//     const data = await api(
-//       `/customers/${id}/summary`,
-//     );
-
-//     el.textContent =
-//       JSON.stringify(data, null, 2);
-//   } catch (err) {
-//     el.textContent = err.message;
-//   }
-// }
 
 function formatSummaryDate(value) {
   if (!value) return "日期不明";
@@ -979,31 +1721,6 @@ function renderCustomerSummary(
   container.classList.remove("hidden");
 }
 
-
-// async function customerSummary(id) {
-//   const container =
-//     document.getElementById("summary-result");
-
-//   if (!container) return;
-
-//   try {
-//     const summary = await api(
-//       `/customers/${id}/summary`,
-//     );
-
-//     renderCustomerSummary(
-//       summary,
-//       container,
-//     );
-
-//     container.scrollIntoView({
-//       behavior: "smooth",
-//       block: "start",
-//     });
-//   } catch (err) {
-//     showError("讀取會員摘要失敗", err);
-//   }
-// }
 function formatSummaryDate(value) {
   if (!value) return "日期不明";
 
@@ -1473,41 +2190,6 @@ function clearSelectedCategory() {
   }
 }
 
-// function clearVerifiedTransactionCustomer() {
-//   const customerId =
-//     document.getElementById("customer_id");
-
-//   const selectedResult  = document.getElementById(
-//     "transaction-customer-result",
-//   );
-
-//  const searchResults = document.getElementById(
-//     "transaction-customer-results",
-//   );
-
-
-// if (customerId) {
-//     customerId.value = "";
-//   }
-
-//   if (selectedResult) {
-//     selectedResult.textContent = "";
-//     selectedResult.classList.add("hidden");
-//   }
-
-//   if (searchResults) {
-//     searchResults.innerHTML = "";
-//     searchResults.classList.add("hidden");
-//   }
-
-//   transactionCustomerSearchResults = [];
-//   selectedTransactionCustomer = null;
-//   customerHistoryTotal = 0;
-//   transactionItems = [];
-
-//   clearSelectedCategory();
-//   renderTransactionItems();
-// }
 function clearVerifiedTransactionCustomer() {
   const customerId =
     document.getElementById("customer_id");
@@ -1555,40 +2237,6 @@ function clearVerifiedTransactionCustomer() {
   renderTransactionItems();
 }
 
-// function showVerifiedTransactionCustomer(
-//   customer,
-//   summary,
-// ) {
-//   const customerId =
-//     document.getElementById("customer_id");
-
-//   const result = document.getElementById(
-//     "transaction-customer-result",
-//   );
-
-//   selectedTransactionCustomer = customer;
-
-//   customerHistoryTotal =
-//     Number(summary?.total_amount) || 0;
-
-//   if (customerId) {
-//     customerId.value = customer.id;
-//   }
-
-//   if (result) {
-//     result.textContent =
-//       `已選客戶：ID ${customer.id}／` +
-//       `${customer.name}／` +
-//       `${customer.phone_number}`;
-
-//     result.classList.remove(
-//       "hidden",
-//       "error",
-//     );
-//   }
-
-//   renderTransactionItems();
-// }
 function showVerifiedTransactionCustomer(
   customer,
   summary,

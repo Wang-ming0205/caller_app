@@ -22,6 +22,17 @@ class TransactionCreate(BaseModel):
     record_date: datetime | None = None
     items: list[TransactionItemCreate]
 
+
+# ===== 新增：修改消費紀錄使用的 payload =====
+class TransactionUpdate(BaseModel):
+    note: str | None = None
+    record_date: datetime | None = None
+
+    items: list[TransactionItemCreate] = Field(
+        min_length=1,
+    )
+
+
 class TransactionItemOut(BaseModel):
     id: int
     item_name: str

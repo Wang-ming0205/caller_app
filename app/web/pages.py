@@ -13,8 +13,20 @@ def login_page(request: Request):
     return templates.TemplateResponse("auth/login.html", {"request": request, "title": "登入"})
 
 @router.get("/customers")
-def customers_page(request: Request):
+def customers_page(request: Request):   
     return templates.TemplateResponse("customers/list.html", {"request": request, "title": "客戶管理"})
+
+# ===== 新增：客戶編輯表單頁面 =====
+@router.get("/customers/edit")
+def customer_edit_page(
+    request: Request,
+):
+    return templates.TemplateResponse(
+        "customers/edit.html",
+        {
+            "request": request,
+        },
+    )
 
 @router.get("/customers/new")
 def customer_create_page(request: Request):

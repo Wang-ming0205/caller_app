@@ -1,0 +1,470 @@
+{#{% extends "base.html" %}
+{% block content %}
+
+<div class="card narrow">
+  <h2>編輯客戶</h2>
+
+  <!-- ===== 新增：客戶編輯表單 ===== -->
+  <form
+    id="customer-edit-form"
+    onsubmit="submitCustomerEdit(event)"
+  >
+    <!-- 用來記住正在修改哪位客戶 -->
+    <input
+      id="customer_id"
+      type="hidden"
+    >
+
+    <label for="edit-name">
+      姓名
+    </label>
+
+    <input
+      id="edit-name"
+      required
+    >
+
+    <label for="edit-phone">
+      手機
+    </label>
+
+    <input
+      id="edit-phone"
+      inputmode="tel"
+      required
+    >
+
+    <label for="edit-gender">
+      性別
+    </label>
+
+    <select id="edit-gender">
+      <option value="">未填</option>
+      <option value="男">男</option>
+      <option value="女">女</option>
+    </select>
+
+    <label for="edit-birthday">
+      生日
+    </label>
+
+    <input
+      id="edit-birthday"
+      type="date"
+    >
+
+    <label for="edit-note">
+      備註
+    </label>
+
+    <textarea
+      id="edit-note"
+      placeholder="可不填"
+    ></textarea>
+
+    <div class="row">
+      <button type="submit">
+        儲存修改
+      </button>
+
+      <a
+        class="btn ghost"
+        href="/customers"
+      >
+        取消
+      </a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ===== 開啟頁面後，向 API 讀取客戶資料 =====
+  initCustomerEditPage();
+</script>
+{% endblock %}#}
+
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .customer-edit-page {
+    width: min(100%, 1050px);
+    margin: 0 auto;
+  }
+
+  .customer-edit-page .card {
+    width: auto;
+    max-width: none;
+    margin-bottom: 18px;
+  }
+
+  .customer-edit-page textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+
+  .edit-status {
+    margin-top: 12px;
+  }
+
+  .transaction-edit-card {
+    margin-top: 14px;
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+  }
+
+  .transaction-edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .transaction-edit-header h3 {
+    margin: 0;
+  }
+
+  .transaction-edit-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .transaction-items-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .transaction-items-table {
+    width: 100%;
+    min-width: 620px;
+  }
+
+  .transaction-items-table input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .transaction-total-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .transaction-total {
+    width: 150px;
+    font-weight: bold;
+  }
+
+  .transaction-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .transaction-message {
+    margin-top: 10px;
+  }
+
+  .danger-text {
+    color: #b42318;
+  }
+
+  @media (max-width: 700px) {
+    .transaction-edit-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .transaction-edit-header,
+    .transaction-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .transaction-total-row {
+      justify-content: flex-start;
+    }
+  }
+</style>
+
+<div class="customer-edit-page">
+
+  <!-- ===== 客戶資料 ===== -->
+  <div class="card">
+    <h2>編輯客戶</h2>
+
+    <form
+      id="customer-edit-form"
+      onsubmit="submitCustomerEdit(event)"
+    >
+      <input
+        id="customer_id"
+        type="hidden"
+      >
+
+      <label for="edit-name">
+        姓名
+      </label>
+
+      <input
+        id="edit-name"
+        required
+      >
+
+      <label for="edit-phone">
+        手機
+      </label>
+
+      <input
+        id="edit-phone"
+        inputmode="tel"
+        required
+      >
+
+      <label for="edit-gender">
+        性別
+      </label>
+
+      <select id="edit-gender">
+        <option value="">未填</option>
+        <option value="男">男</option>
+        <option value="女">女</option>
+      </select>
+
+      <label for="edit-birthday">
+        生日
+      </label>
+
+      <input
+        id="edit-birthday"
+        type="date"
+      >
+
+      <label for="edit-note">
+        備註
+      </label>
+
+      <textarea
+        id="edit-note"
+        placeholder="可不填"
+      ></textarea>
+
+      <div class="row">
+        <button type="submit">
+          儲存客戶資料
+        </button>
+
+        <a
+          class="btn ghost"
+          href="/customers"
+        >
+          返回客戶管理
+        </a>
+      </div>
+
+      <p
+        id="customer-edit-message"
+        class="edit-status"
+        hidden
+      ></p>
+    </form>
+  </div>
+
+
+  <!-- ===== 消費紀錄 ===== -->
+  <div class="card" 
+    id="transaction-history-card"
+    class="card"
+    /*hidden*/>
+    <div class="transaction-edit-header">
+      <h2>消費紀錄</h2>
+
+      <span id="transaction-history-count">
+        讀取中……
+      </span>
+    </div>
+
+    <p id="transaction-history-loading">
+      正在讀取消費紀錄……
+    </p>
+
+    <p
+      id="transaction-history-empty"
+      hidden
+    >
+      這位客戶目前沒有消費紀錄。
+    </p>
+
+    <div id="transaction-history-list"></div>
+  </div>
+
+</div>
+
+
+<!-- ===== 單筆消費紀錄模板 ===== -->
+<template id="transaction-edit-template">
+  <article class="transaction-edit-card">
+    <div class="transaction-edit-header">
+      <h3>
+        消費紀錄 #
+        <span data-field="transaction-id"></span>
+      </h3>
+
+      <span data-field="created-at"></span>
+    </div>
+
+    <input
+      data-field="transaction-id-input"
+      type="hidden"
+    >
+
+    <div class="transaction-edit-grid">
+      <div>
+        <label>
+          消費日期
+        </label>
+
+        <input
+          data-field="record-date"
+          type="date"
+          required
+        >
+      </div>
+
+      <div>
+        <label>
+          整筆備註
+        </label>
+
+        <textarea
+          data-field="transaction-note"
+          placeholder="可不填"
+        ></textarea>
+      </div>
+    </div>
+
+    <h4>消費項目</h4>
+
+    <div class="transaction-items-wrap">
+      <table class="transaction-items-table">
+        <thead>
+          <tr>
+            <th>項目名稱</th>
+            <th>數量</th>
+            <th>單價</th>
+            <th>小計</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+
+        <tbody data-field="items-body"></tbody>
+      </table>
+    </div>
+
+    <div class="transaction-total-row">
+      <label>
+        總金額
+      </label>
+
+      <input
+        class="transaction-total"
+        data-field="total-amount"
+        type="number"
+        readonly
+      >
+    </div>
+
+    <div class="transaction-actions">
+      <button
+        data-action="add-transaction-item"
+        type="button"
+        class="secondary"
+      >
+        新增消費項目
+      </button>
+
+      <button
+        data-action="save-transaction"
+        type="button"
+      >
+        儲存這筆消費
+      </button>
+    </div>
+
+    <p
+      class="transaction-message"
+      data-field="transaction-message"
+      hidden
+    ></p>
+  </article>
+</template>
+
+
+<!-- ===== 單項消費內容模板 ===== -->
+<template id="transaction-item-edit-template">
+  <tr>
+    <td>
+      <input
+        data-field="item-name"
+        placeholder="例如：剪髮"
+        required
+      >
+    </td>
+
+    <td>
+      <input
+        data-field="item-qty"
+        type="number"
+        min="1"
+        value="1"
+        required
+      >
+    </td>
+
+    <td>
+      <input
+        data-field="item-unit-price"
+        type="number"
+        min="0"
+        step="1"
+        required
+      >
+    </td>
+
+    <td>
+      <input
+        data-field="item-subtotal"
+        type="number"
+        readonly
+      >
+    </td>
+
+    <td>
+      <button
+        data-action="remove-transaction-item"
+        type="button"
+        class="danger"
+      >
+        移除
+      </button>
+    </td>
+  </tr>
+</template>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+  initCustomerEditPage();
+</script>
+{% endblock %}
