@@ -1,18 +1,3 @@
-{#{% extends "base.html" %}
-{% block content %}
-<div class="card narrow">
-  <h2>新增客戶</h2>
-  <label>姓名</label><input id="name" placeholder="王小明">
-  <label>手機</label><input id="phone_number" placeholder="0912345678">
-  <label>性別</label><input id="gender" placeholder="男 / 女 / 其他">
-  <label>生日</label><input id="birthday" type="date">
-  <label>備註</label><textarea id="note" placeholder="喜好、髮型、注意事項"></textarea>
-  <button onclick="createCustomer()">新增</button>
-</div>
-{% endblock %}
-{% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}
-#}
-
 {% extends "base.html" %}
 {% block content %}
 <div class="card narrow">
@@ -25,5 +10,42 @@
   <label>備註</label><textarea id="note" placeholder="喜好、髮型、注意事項"></textarea>
   <button onclick="createCustomer()">新增</button>
 </div>
+<div class="card narrow">
+  <h2>批次匯入客戶</h2>
+
+  <p class="hint">
+    請上傳 .xlsx .csv ，最多 5 MB、5000 列。
+    第一列表頭需包含「姓名、電話、生日」，
+    可另外包含「性別、備註」。
+  </p>
+
+  <p class="hint">
+    電話欄請設為文字，保留開頭的 0；
+    生日請使用西元 YYYY-MM-DD，例如 1995-03-08。
+    重複電話會跳過，不覆蓋原資料。
+  </p>
+
+  <label for="customer-import-file">Excel 檔案</label>
+  <input
+    id="customer-import-file"
+    type="file"
+    accept=".xlsx .csv"
+  >
+
+  <button
+    id="customer-import-button"
+    type="button"
+    onclick="importCustomersExcel()"
+  >
+    批次匯入
+  </button>
+
+  <pre
+    id="customer-import-result"
+    aria-live="polite"
+    style="white-space: pre-wrap; overflow-wrap: anywhere;"
+  ></pre>
+</div>
+
 {% endblock %}
 {% block scripts %}<script>checkLoginStatus(true);</script>{% endblock %}

@@ -1,11 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter, 
+    Depends, 
+    HTTPException, 
+    Query,
+    UploadFile,
+    File,
+    )
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 #新增匯出csv
 import csv
-from io import StringIO
+from io import StringIO 
 from fastapi.responses import StreamingResponse
 
 from app.api.deps import get_current_user, require_roles, require_customer_access
@@ -15,6 +22,9 @@ from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerOut, CustomerSummaryOut, CustomerUpdate
 from app.services import customer_service
 from app.api.audit import write_audit_log
+
+
+
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -179,6 +189,69 @@ def delete_customer(
     
     return {"message": "Customer deleted", "id": customer_id}
 
+@router.post("/import/excel")
+def import_customers_excel(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles("admin", "manager", "staff")
+    ),
+):
+    try:
+        filename = file.filename or ""
+
+        if not filename.lower().endswith((".xlsx",".csv")):
+            raise HTTPException(
+                status_code=400,
+                detail="請上傳 .xlsx 檔案 或 .csv檔案",
+            )
+
+        max_size = 5 * 1024 * 1024
+        content = file.file.read(max_size + 1)
+
+        if not content:
+            raise HTTPException(
+                status_code=400,
+                detail="檔案不可為空",
+            )
+
+        if len(content) > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail="檔案不可超過 5 MB",
+            )
+
+        try:
+            result = customer_service.import_customers(
+                db=db,
+                file_content=content,
+                owner_user_id=current_user.id,
+                filename = filename,
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=str(exc),
+            ) from exc
+
+        write_audit_log(
+            db=db,
+            action="IMPORT_CUSTOMERS",
+            target_type="customer",
+            user_id=current_user.id,
+            target_id=None,
+            detail={
+                "created": result["created"],
+                "skipped": result["skipped"],
+                "failed": result["failed"],
+            },
+        )
+
+        return result
+
+    finally:
+        file.file.close()
+
 @router.get("/{customer_id}", response_model=CustomerOut)
 def get_customer(
     customer_id: int,
@@ -267,31 +340,3 @@ def get_customer_summary(
         customer=customer,
         limit=5,
     )
-
-    # total_amount = db.execute(
-    #     select(func.coalesce(func.sum(Transaction.total_amount), 0))
-    #     .where(Transaction.customer_id == customer_id)
-    # ).scalar_one()
-
-    # last_items = None
-    # last_record = None
-    # last_day = None
-
-    # if last_tx:
-    #     items = db.execute(
-    #         select(TransactionItem.item_name)
-    #         .where(TransactionItem.transaction_id == last_tx.id)
-    #     ).scalars().all()
-    #     last_items = ", ".join(items) if items else None
-    #     last_record = last_tx.note
-    #     last_day = last_tx.record_date
-
-    # return CustomerSummaryOut(
-    #     customer_id=customer.id,
-    #     name=customer.name,
-    #     phone_number=customer.phone_number,
-    #     last_record=last_record,
-    #     last_items=last_items,
-    #     total_amount=Decimal(total_amount),
-    #     last_day=last_day,
-    # )

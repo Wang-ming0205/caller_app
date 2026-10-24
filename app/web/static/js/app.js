@@ -48,9 +48,19 @@ async function api(path, options = {}) {
 
   try {
     const headers = {
-      "Content-Type": "application/json",
+      // "Content-Type": "application/json",
       ...(options.headers || {}),
     };
+
+    if (options.body instanceof FormData) {
+      for (const key of Object.keys(headers)) {
+        if (key.toLowerCase() === "content-type") {
+          delete headers[key];
+        }
+      }
+    } else {
+      headers["Content-Type"] = "application/json";
+    }    
 
     const currentToken = localStorage.getItem("access_token");
 
@@ -79,7 +89,12 @@ async function api(path, options = {}) {
           ? data.detail
           : `HTTP ${res.status}`;
 
-      throw new Error(detail);
+      // throw new Error(detail);
+      throw new Error(
+        typeof detail === "string"
+          ? detail
+          : JSON.stringify(detail, null, 2)
+      );
     }
 
     return data;
@@ -712,133 +727,7 @@ function renderCustomerTable(customers) {
         list.appendChild(card);
       }
     }        
-//     tr.innerHTML = `
-//       <td>${customer.id}</td>
 
-//       <td>
-//         <input
-//           id="name-${customer.id}"
-//           value="${escapeHtml(customer.name)}"
-//         >
-//       </td>
-
-//       <td>
-//         <input
-//           id="phone-${customer.id}"
-//           value="${escapeHtml(customer.phone_number)}"
-//         >
-//       </td>
-
-//       <td>
-//         <select id="gender-${customer.id}">
-//           <option
-//             value=""
-//             ${!customer.gender ? "selected" : ""}
-//           >
-//             未填
-//           </option>
-
-//           <option
-//             value="男"
-//             ${customer.gender === "男" ? "selected" : ""}
-//           >
-//             男
-//           </option>
-
-//           <option
-//             value="女"
-//             ${customer.gender === "女" ? "selected" : ""}
-//           >
-//             女
-//           </option>
-//         </select>
-//       </td>
-
-
-//       <td>
-//         <input
-//           id="birthday-${customer.id}"
-//           type="date"
-//           value="${escapeHtml(customer.birthday || "")}"
-//         >
-//       </td>
-
-//       <td>
-//         <input
-//           id="note-${customer.id}"
-//           value="${escapeHtml(customer.note || "")}"
-//         >
-//       </td>
-
-//       <td>
-//         <button
-//           onclick="updateCustomer(${customer.id})"
-//         >
-//           儲存
-//         </button>
-
-//         <button
-//           onclick="customerSummary(${customer.id})"
-//         >
-//           摘要
-//         </button>
-
-//         <button
-//           onclick="deleteCustomer(${customer.id})"
-//         >
-//           刪除
-//         </button>
-//       </td>
-//     `;
-
-//     tbody.appendChild(tr);
-//   }
-// }
-
-// async function updateCustomer(id) {
-//   try {
-//     const payload = {
-//       name: document
-//         .getElementById(`name-${id}`)
-//         .value
-//         .trim(),
-
-//       phone_number: document
-//         .getElementById(`phone-${id}`)
-//         .value
-//         .trim(),
-        
-//       birthday:document
-//         .getElementById(`birthday-${id}`)
-//         .value || null,
-
-//       gender:
-//         document.getElementById(`gender-${id}`)
-//           .value || null,
-
-//       note:
-//         document.getElementById(`note-${id}`)
-//           .value || null,
-//     };
-
-//     const data = await api(
-//       `/customers/${id}`,
-//       {
-//         method: "PUT",
-//         body: JSON.stringify(payload),
-//       },
-//     );
-
-//     await showSuccess(
-//       "修改成功",
-//       data.name,
-//     );
-
-//     loadLatestCustomers();
-//   } catch (err) {
-//     showError("修改失敗", err);
-//   }
-// }
 
 // ===== 修改：按編輯後前往獨立表單頁 =====
 function openCustomerEdit(id) {
@@ -3385,3 +3274,96 @@ document.addEventListener(
 );
 
 // ================== 頁面跳轉控制結束 ==================
+
+
+let isImportingCustomers = false;
+
+async function importCustomersExcel() {
+  if (isImportingCustomers) return;
+
+  const input = document.getElementById(
+    "customer-import-file"
+  );
+  const button = document.getElementById(
+    "customer-import-button"
+  );
+  const resultBox = document.getElementById(
+    "customer-import-result"
+  );
+
+  const file = input?.files?.[0];
+
+  if (!file) {
+    showError("尚未選擇檔案", "請先選擇 Excel 檔案");
+    return;
+  }
+
+  if (!/\.(xlsx|csv)$/i.test(file.name)) {
+    showError("檔案格式錯誤", "請選擇 .xlsx 檔案");
+    return;
+  }
+
+  if (file.size === 0) {
+    showError("檔案為空", "請重新選擇檔案");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    showError("檔案太大", "檔案不可超過 5 MB");
+    return;
+  }
+
+  isImportingCustomers = true;
+  button.disabled = true;
+  input.disabled = true;
+  button.textContent = "匯入中…";
+  resultBox.textContent = "正在處理，請稍候…";
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const result = await api("/customers/import/excel", {
+      method: "POST",
+      body: formData,
+    });
+
+    const statusLabels = {
+      created: "新增成功",
+      skipped: "跳過",
+      failed: "失敗",
+    };
+
+    const lines = [
+      `新增：${result.created} 位`,
+      `跳過：${result.skipped} 位`,
+      `失敗：${result.failed} 位`,
+      "",
+      ...result.results.map(item => {
+        const status =
+          statusLabels[item.status] || item.status;
+
+        return (
+          `第 ${item.row} 列｜${item.name || "未填姓名"}` +
+          `｜${status}｜${item.reason}`
+        );
+      }),
+    ];
+
+    // 用 textContent 顯示 Excel 內容，避免當成 HTML 執行。
+    resultBox.textContent = lines.join("\n");
+    input.value = "";
+  } catch (err) {
+    resultBox.textContent =
+      "未能取得匯入結果：" +
+      (err instanceof Error ? err.message : String(err)) +
+      "\n若是連線中斷或伺服器錯誤，請先查詢客戶是否已新增。";
+
+    showError("匯入未完成", err);
+  } finally {
+    isImportingCustomers = false;
+    button.disabled = false;
+    input.disabled = false;
+    button.textContent = "批次匯入";
+  }
+}
