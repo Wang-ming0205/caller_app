@@ -35,7 +35,7 @@ Caller App 是我利用工作之餘持續開發的客戶管理系統（CRM），
 | 資料驗證 | Pydantic |
 | 身分驗證 | JWT |
 | Frontend | HTML、CSS、Bootstrap、JavaScript |
-| Database | PostgreSQL（Supabase）、SQLite |
+| Database | Supabase PostgreSQL（正式環境）、SQLite（本機開發與測試） |
 | Testing | pytest |
 | Deployment | Render |
 | Monitoring | UptimeRobot |
@@ -206,7 +206,19 @@ GET  /api/transactions/customer/{id}
 
 完整端點、請求格式與回應內容請參考 Swagger API 文件。
 
+## 資料庫
+
+- 正式環境使用 Supabase 託管的 PostgreSQL。
+- 本機開發與測試使用 SQLite。
+- 透過 SQLAlchemy 進行資料存取。
+- 已為 users、customers、audit_logs、transactions、
+  transaction_items 五張資料表啟用 Row Level Security（RLS）。
+- FastAPI 後端負責使用者身分驗證與角色權限檢查。
+
 ## 部署與監控
+- Render：部署 FastAPI 應用程式。
+- Supabase：提供 PostgreSQL 資料庫。
+- UptimeRobot：定期檢查網站是否正常回應。
 
 ### Render
 
