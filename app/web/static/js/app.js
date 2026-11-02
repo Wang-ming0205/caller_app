@@ -3,6 +3,8 @@ const API_PREFIX = "/api";
 let currentUser = null;
 let apiLoadingCount = 0;
 let apiLoadingCloseTimer = null;
+let apiLoadingStartedAt = 0;
+const API_LOADING_MIN_MS = 800;
 let isInitialPageLoad =
   sessionStorage.getItem("page_navigation_loading") === "true";
 
@@ -12,12 +14,17 @@ function beginApiLoading() {
     apiLoadingCloseTimer = null;
   }
 
+  if (apiLoadingCount === 0) {
+    apiLoadingStartedAt = Date.now();
+
+    showLoading(
+      isInitialPageLoad
+        ? "頁面載入中..."
+        : "讀取中...",
+    );
+  }
+
   apiLoadingCount += 1;
-  showLoading(
-    isInitialPageLoad
-      ? "頁面載入中..."
-      : "讀取中...",
-  );
 }
 
 function endApiLoading() {
@@ -25,18 +32,24 @@ function endApiLoading() {
 
   if (apiLoadingCount > 0) return;
 
-  // 延到下一輪再關閉，讓連續 await 的初始化 API 共用同一個動畫。
+  const elapsed = Date.now() - apiLoadingStartedAt;
+  const remaining = Math.max(
+    0,
+    API_LOADING_MIN_MS - elapsed,
+  );
+
   apiLoadingCloseTimer = setTimeout(() => {
     if (apiLoadingCount > 0) return;
 
     hideLoading();
     apiLoadingCloseTimer = null;
+    apiLoadingStartedAt = 0;
 
     if (isInitialPageLoad) {
       isInitialPageLoad = false;
       sessionStorage.removeItem("page_navigation_loading");
     }
-  }, 0);
+  }, remaining);
 }
 
 async function api(path, options = {}) {
@@ -136,6 +149,7 @@ function finishApiLoadingBeforeMessage() {
   }
 
   apiLoadingCount = 0;
+  apiLoadingStartedAt = 0;
   hideLoading();
 
   if (isInitialPageLoad) {
@@ -622,6 +636,19 @@ async function loadLatestCustomers() {
   }
 }
 
+async function loadAllCustomers() {
+  const list = document.getElementById("customer-list");
+
+  if (!list) return;
+
+  try {
+    const data = await api("/customers/all");
+    renderCustomerTable(data);
+  } catch (err) {
+    showError("讀取全部客戶失敗", err);
+  }
+}
+
 async function searchCustomers() {
   const q = document
     .getElementById("q")
@@ -712,11 +739,11 @@ function renderCustomerTable(customers) {
 
         // ===== 摘要按鈕 =====
         card.querySelector(
-          "[data-action='summary']",
-        ).addEventListener("click", () => {
-          customerSummary(customer.id);
+            "[data-action='summary']",
+            ).addEventListener("click", () => {
+              customerSummary(customer.id, card);
         });
-
+        
         // ===== 刪除按鈕 =====
         card.querySelector(
           "[data-action='delete']",
@@ -1798,31 +1825,45 @@ function renderCustomerSummary(
 }
 
 
-async function customerSummary(id) {
+async function customerSummary(id, card) {
   const container =
-    document.getElementById("summary-result");
+    card.querySelector("[data-field='summary']");
 
   if (!container) return;
+
+  const isOpen = !container.classList.contains("hidden");
+
+  // 收起其他會員的摘要
+  document
+    .querySelectorAll("#customer-list [data-field='summary']")
+    .forEach((item) => {
+      item.classList.add("hidden");
+      item.innerHTML = "";
+    });
+
+  // 再點同一位會員的摘要按鈕，就收起摘要
+  if (isOpen) return;
+
+  container.classList.remove("hidden");
+  container.innerHTML =
+    '<p class="hint">會員摘要載入中…</p>';
 
   try {
     const summary = await api(
       `/customers/${id}/summary`,
+      { showLoading: false },
     );
 
-    renderCustomerSummary(
-      summary,
-      container,
-    );
+    renderCustomerSummary(summary, container);
 
     container.scrollIntoView({
       behavior: "smooth",
-      block: "start",
+      block: "nearest",
     });
   } catch (err) {
-    showError(
-      "讀取會員摘要失敗",
-      err,
-    );
+    container.classList.add("hidden");
+    container.innerHTML = "";
+    showError("讀取會員摘要失敗", err);
   }
 }
 

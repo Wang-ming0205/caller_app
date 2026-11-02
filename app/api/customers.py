@@ -108,6 +108,13 @@ def list_customers(
     stmt = stmt.order_by(Customer.id.desc()).limit(5)
     return list(db.execute(stmt).scalars().all())
 
+@router.get("/all", response_model=list[CustomerOut])
+def list_all_customers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    stmt = select(Customer).order_by(Customer.id.desc())
+    return list(db.execute(stmt).scalars().all())
 
 
 @router.get("/by-phone/{phone_number}", response_model=CustomerOut)

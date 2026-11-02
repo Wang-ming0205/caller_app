@@ -196,7 +196,15 @@
     grid-template-columns: 1fr;
     }
   }
+.customer-summary-inline {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
 
+.customer-summary-inline.hidden {
+  display: none;
+}
 </style>
 
 <div class="card">
@@ -221,26 +229,14 @@
       最新五筆
     </button>
 
+    <button onclick="loadAllCustomers()">
+      顯示全部
+    </button>
+
     <button onclick="exportCustomersCsv()">
       匯出 CSV
     </button>
   </div>
-
-{#  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>姓名</th>
-        <th>手機</th>
-        <th>性別</th>
-        <th>生日</th>
-        <th>備註</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-
-    <tbody id="customer-table"></tbody>
-  </table>#}
 
 
 <div
@@ -252,88 +248,82 @@
   template 不會直接顯示。
   app.js 取得客戶資料後，會複製這張卡片。
 -->
-  <template id="customer-card-template">
-    <article class="customer-card">
+<template id="customer-card-template">
+  <article class="customer-card">
 
-      <div class="customer-card-title">
-        <div>
-          <h3 data-field="name"></h3>
+    <div class="customer-card-title">
+      <div>
+        <h3 data-field="name"></h3>
 
-          <span class="hint">
-            ID：
-            <span data-field="id"></span>
-          </span>
-        </div>
+        <span class="hint">
+          ID：
+          <span data-field="id"></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="customer-card-fields">
+
+      <div class="customer-field">
+        <span>手機</span>
+        <strong data-field="phone"></strong>
       </div>
 
-      <div class="customer-card-fields">
-
-        <div class="customer-field">
-          <span>手機</span>
-          <strong data-field="phone"></strong>
-        </div>
-
-        <div class="customer-field">
-          <span>性別</span>
-          <strong data-field="gender"></strong>
-        </div>
-
-        <div class="customer-field">
-          <span>生日</span>
-          <strong data-field="birthday"></strong>
-        </div>
-
-        <div class="customer-field">
-          <span>備註</span>
-          <strong data-field="note"></strong>
-        </div>
-
+      <div class="customer-field">
+        <span>性別</span>
+        <strong data-field="gender"></strong>
       </div>
 
-      <div class="customer-card-actions">
-        <button
-          type="button"
-          data-action="edit"
-        >
-          編輯
-        </button>
-
-        <button
-          type="button"
-          class="secondary"
-          data-action="summary"
-        >
-          摘要
-        </button>
-
-        <button
-          type="button"
-          class="delete-button"
-          data-action="delete"
-        >
-          刪除
-        </button>
+      <div class="customer-field">
+        <span>生日</span>
+        <strong data-field="birthday"></strong>
       </div>
 
-    </article>
-  </template>
+      <div class="customer-field">
+        <span>備註</span>
+        <strong data-field="note"></strong>
+      </div>
+
+    </div>
+
+    <div class="customer-card-actions">
+      <button
+        type="button"
+        data-action="edit"
+      >
+        編輯
+      </button>
+
+      <button
+        type="button"
+        class="secondary"
+        data-action="summary"
+      >
+        摘要
+      </button>
+
+      <button
+        type="button"
+        class="delete-button"
+        data-action="delete"
+      >
+        刪除
+      </button>
+    </div>
+
+    <!-- 這張會員自己的摘要區，點摘要後會在這裡展開 -->
+    <div
+      class="customer-summary customer-summary-inline hidden"
+      data-field="summary"
+    ></div>
+
+  </article>
+</template>
+
 
 </div>
 
-<div class="card">
-  <h2>會員摘要</h2>
-
-  <div
-    id="summary-result"
-    class="customer-summary"
-  >
-    <p class="hint">
-      點「摘要」查看總消費與最近五筆消費紀錄。
-    </p>
-  </div>
-</div>
 {% endblock %}
-
 {% block scripts %}
 <script>
   initHome();
