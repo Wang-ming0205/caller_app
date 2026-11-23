@@ -14,6 +14,8 @@ from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from pydantic import ValidationError
 import csv
+from sqlalchemy import text
+
 
 def get_latest_customers(db: Session, limit: int = 5):
     stmt = (
@@ -530,3 +532,10 @@ def import_customers(
         ),
         "results": results,
     }
+
+def lock_household_phone(db: Session, phone_number: str) -> None:
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:phone_number))"),
+            {"phone_number": phone_number},
+        )

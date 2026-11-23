@@ -6,6 +6,8 @@ from app.core.config import settings
 from app.core.database import Base, engine
 from app.api import admin,auth, customers, items, transactions, setup, users
 from app.web import pages
+from app.web import pages, reservations
+
 
 
 Base.metadata.create_all(bind=engine)
@@ -37,7 +39,9 @@ app.include_router(items.router, prefix="/api")
 app.include_router(transactions.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 
-
+#reservation webUI
+app.include_router(pages.router, include_in_schema=False)
+app.include_router(reservations.router, include_in_schema=False)
 
 @app.get("/health", tags=["system"])
 def health():

@@ -47,3 +47,14 @@ def users_page(request: Request):
 @router.get("/account")
 def account_page(request: Request):
     return templates.TemplateResponse("users/account.html", {"request": request, "title": "帳號設定"})
+
+@router.get("/reservation")
+def guest_reservation_page(request: Request):
+    return templates.TemplateResponse(
+        "customers/reservation.html",
+        {
+            "request": request,
+            "title": "預約服務",
+            "public_page": True,
+        },
+    )
