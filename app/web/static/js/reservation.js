@@ -183,11 +183,38 @@ guestBookingForm.addEventListener("submit", (event) => {
 
 guestFirstBookingForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  ////////以下新增一行 
+  const name = fields.get("name").trim();
+  // const fields = new FormData(guestFirstBookingForm); --no this 
+  const identity = {
+    phone_number: fields.get("phone_number").trim(),
+    birthday: fields.get("birthday") || null, //add null,can has var or not
+    name
+  };
+///////////////////add this event 
+  guestFirstLookupButton.addEventListener("click", () => {
   const fields = new FormData(guestFirstBookingForm);
   const identity = {
     phone_number: fields.get("phone_number").trim(),
-    birthday: fields.get("birthday"),
+    birthday: fields.get("birthday") || null,
+    name: fields.get("name").trim(),
   };
+
+  if (!identity.phone_number || !identity.name) {
+    guestMessage.textContent = "請輸入完整手機號碼和姓名。";
+    return;
+  }
+
+  runReservationAction("查詢中…", async () => {
+    const appointments = await readReservation(
+      "lookup",
+      identity,
+      "無法讀取預約清單。",
+    );
+    guestMessage.textContent = appointments.length ? "" : "查無符合的預約。";
+    renderGuestAppointments(appointments, identity);
+  }, "無法讀取預約清單。");
+  });
 
   submitGuestBooking("book", "lookup", identity, {
     name: fields.get("name").trim(),

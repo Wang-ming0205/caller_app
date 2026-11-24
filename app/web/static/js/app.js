@@ -1,6 +1,8 @@
 // new version
 const API_PREFIX = "/api";
 let currentUser = null;
+// add new
+let todayAppointmentReminders = [];
 let apiLoadingCount = 0;
 let apiLoadingCloseTimer = null;
 let apiLoadingStartedAt = 0;
@@ -252,6 +254,7 @@ function updateAdminResetTrigger(user = null) {
 
 async function checkLoginStatus(
   redirectWhenMissing = true,
+  //新增提醒
 ) {
   const el = document.getElementById("login-status");
   const currentToken =
@@ -289,6 +292,8 @@ async function checkLoginStatus(
 
     updateAuthButton(true);
     updateAdminResetTrigger(me);
+    //以下一行新增的 這樣對嗎?
+    restoreTodayAppointmentReminder();
 
     return true;
   } catch (err) {
@@ -310,28 +315,167 @@ async function checkLoginStatus(
   }
 }
 
+///////////////////新增提醒js func
+function restoreTodayAppointmentReminder() {
+  const button = document.getElementById("appointment-reminder");
+  if (!button) return;
+
+  let reminder = null;
+  try {
+    reminder = JSON.parse(
+      sessionStorage.getItem("today_appointment_reminders") || "null",
+    );
+  } catch {
+    sessionStorage.removeItem("today_appointment_reminders");
+  }
+
+  if (!reminder || reminder.date !== getTaipeiDateKey()) {
+    button.hidden = true;
+    todayAppointmentReminders = [];
+    sessionStorage.removeItem("today_appointment_toast_pending");
+    return;
+  }
+
+  todayAppointmentReminders = Array.isArray(reminder.appointments)
+    ? reminder.appointments
+    : [];
+  button.hidden = todayAppointmentReminders.length === 0;
+
+  const count = document.getElementById("appointment-reminder-count");
+  if (count) count.textContent = String(todayAppointmentReminders.length);
+
+  if (
+    todayAppointmentReminders.length > 0 &&
+    sessionStorage.getItem("today_appointment_toast_pending") === "true"
+  ) {
+    sessionStorage.removeItem("today_appointment_toast_pending");
+
+    if (hasSwal()) {
+      Swal.fire({
+        toast: true,
+        icon: "info",
+        title: `今日有 ${todayAppointmentReminders.length} 筆預約`,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+      });
+    }
+  }
+}
+////////////////////////////
+
+////////////////////// add new funct
+function getTaipeiDateKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const values = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value]),
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+async function showTodayAppointmentList() {
+  if (todayAppointmentReminders.length === 0) return;
+
+  const dateFormat = new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    dateStyle: "medium",
+    timeStyle: "short",
+    hourCycle: "h23",
+  });
+
+  const list = document.createElement("ol");
+  list.style.cssText = "text-align:left; max-height:50vh; overflow:auto;";
+
+  for (const appointment of todayAppointmentReminders) {
+    const item = document.createElement("li");
+    item.className = "mb-2";
+    item.textContent =
+      `${dateFormat.format(new Date(appointment.starts_at))}　` +
+      `${appointment.customer_name}｜${appointment.service_name}`;
+    list.appendChild(item);
+  }
+
+  await Swal.fire({
+    title: `今日預約（${todayAppointmentReminders.length} 筆）`,
+    html: list,
+    confirmButtonText: "關閉",
+  });
+}
+
+
+
+// async function login() {
+// //
+// //   try {
+// //     const data = await api("/auth/login", {
+// //       method: "POST",
+// //       body: JSON.stringify({
+// //         username:
+// //           document.getElementById("username").value,
+// //         password:
+// //           document.getElementById("password").value,
+// //       }),
+// //     });
+
+// //     localStorage.setItem(
+// //       "access_token",
+// //       data.access_token,
+// //     );
+
+// //     await showSuccess("登入成功");
+// //     goToPage("/");
+// //   } catch (err) {
+// //     showError("登入失敗", err);
+// //   }
+// ///////////////////////////以下新增
+
+// }
+//以下新版的login
 async function login() {
   try {
     const data = await api("/auth/login", {
       method: "POST",
       body: JSON.stringify({
-        username:
-          document.getElementById("username").value,
-        password:
-          document.getElementById("password").value,
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value,
       }),
     });
 
-    localStorage.setItem(
-      "access_token",
-      data.access_token,
-    );
-
-    await showSuccess("登入成功");
-    goToPage("/");
+    localStorage.setItem("access_token", data.access_token);
   } catch (err) {
     showError("登入失敗", err);
+    return;
   }
+
+  try {
+    const appointments = await api("/customer_reservation", {
+      showLoading: false,
+      cache: "no-store",
+    });
+
+    sessionStorage.setItem(
+      "today_appointment_reminders",
+      JSON.stringify({
+        date: getTaipeiDateKey(),
+        appointments,
+      }),
+    );
+    sessionStorage.setItem("today_appointment_toast_pending", "true");
+  } catch (err) {
+    console.error("今日預約提醒讀取失敗", err);
+    sessionStorage.removeItem("today_appointment_reminders");
+    sessionStorage.removeItem("today_appointment_toast_pending");
+  }
+
+  goToPage("/");
 }
 
 function logout() {
@@ -832,6 +976,57 @@ async function initCustomerEditPage() {
     );
   }
 }
+////////////add 261124
+const guestFirstLookupButton =
+  document.getElementById("guest-first-lookup-button");
+
+////////////add 261124
+guestFirstBookingForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const fields = new FormData(guestFirstBookingForm);
+  const name = fields.get("name").trim();
+
+  const identity = {
+    phone_number: fields.get("phone_number").trim(),
+    birthday: fields.get("birthday") || null,
+    name,
+  };
+
+  submitGuestBooking("book", "lookup", identity, {
+    starts_at: new Date(fields.get("starts_at")).toISOString(),
+    service_name: fields.get("service_name").trim(),
+  });
+});
+
+guestFirstLookupButton.addEventListener("click", () => {
+  const fields = new FormData(guestFirstBookingForm);
+
+  const identity = {
+    phone_number: fields.get("phone_number").trim(),
+    birthday: fields.get("birthday") || null,
+    name: fields.get("name").trim(),
+  };
+
+  if (!identity.phone_number || !identity.name) {
+    guestMessage.textContent = "請輸入完整手機號碼和姓名。";
+    return;
+  }
+
+  runReservationAction("查詢中…", async () => {
+    const appointments = await readReservation(
+      "lookup",
+      identity,
+      "無法讀取預約清單。",
+    );
+
+    guestMessage.textContent =
+      appointments.length ? "" : "查無符合的預約。";
+
+    renderGuestAppointments(appointments, identity);
+  }, "無法讀取預約清單。");
+});
+
 
 // ===== 新增：送出編輯表單 =====
 async function submitCustomerEdit(event) {

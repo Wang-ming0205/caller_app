@@ -1,4 +1,8 @@
 from datetime import datetime, timedelta, timezone
+# 3 lines is add package
+from sqlalchemy import select
+from app.core.database import SessionLocal
+from app.models.customer import Customer
 
 import pytest
 
@@ -62,6 +66,46 @@ def test_guest_can_book_and_lookup_reservation(
         actual = actual.replace(tzinfo=timezone.utc)
     assert actual == datetime.fromisoformat(booking_payload["starts_at"])
 
+#add new test 261124
+def test_member_without_birthday_can_book_lookup_and_cancel(
+    client, sample_customer
+):
+    with SessionLocal() as db:
+        customer = db.scalar(
+            select(Customer).where(Customer.id == sample_customer["id"])
+        )
+        customer.birthday = None
+        db.commit()
+
+    identity = {
+        "phone_number": sample_customer["phone_number"],
+        "name": sample_customer["name"],
+    }
+    payload = {
+        **identity,
+        "starts_at": (
+            datetime.now(timezone.utc) + timedelta(days=2)
+        ).isoformat(),
+        "service_name": "生日未登記測試",
+    }
+
+    booking = client.post("/reservation/book", json=payload)
+    assert booking.status_code == 200, booking.text
+
+    lookup = client.post("/reservation/lookup", json=identity)
+    assert lookup.status_code == 200, lookup.text
+    assert [row["id"] for row in lookup.json()] == [booking.json()["id"]]
+
+    cancel = client.post(
+        "/reservation/cancel",
+        json={**identity, "appointment_id": booking.json()["id"]},
+    )
+    assert cancel.status_code == 200, cancel.text
+    assert cancel.json() == {"status": "cancelled"}
+
+    lookup_after_cancel = client.post("/reservation/lookup", json=identity)
+    assert lookup_after_cancel.status_code == 200, lookup_after_cancel.text
+    assert [row["status"] for row in lookup_after_cancel.json()] == ["cancelled"]
 
 @pytest.mark.parametrize(
     "identity_override",
@@ -93,4 +137,15 @@ def test_guest_can_cancel_once_and_lookup_cancelled_reservation(
 ):
     payload = {**guest_identity, "appointment_id": booked_appointment["id"]}
 
+    # first = client.post("/reservation/cancel", json=payload)
+    #new version
     first = client.post("/reservation/cancel", json=payload)
+    assert first.status_code == 200, first.text
+    assert first.json() == {"status": "cancelled"}
+
+    second = client.post("/reservation/cancel", json=payload)
+    assert second.status_code == 404
+
+    lookup = client.post("/reservation/lookup", json=guest_identity)
+    assert lookup.status_code == 200, lookup.text
+    assert [appointment["status"] for appointment in lookup.json()] == ["cancelled"]

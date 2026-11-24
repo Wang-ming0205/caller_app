@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title or "Barbershop CRM" }}</title>
   <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/static/css/style.css?v=20260830">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261124-1">
 </head>
 <body>
   <aside class="sidebar">
@@ -29,14 +29,34 @@
         <p id="login-status">檢查登入狀態中...</p>
       </div>
 
-      <div class="d-flex align-items-center gap-1">
+{#      <div class="d-flex align-items-center gap-1">
+        <button
+          id="auth-btn"
+          class="btn"
+          type="button"
+          onclick="handleAuthButton()"
+        >登入</button>  11.24 cancel #}
+       {#add new button #}
+       <div class="d-flex align-items-center gap-1">
+        <button
+          id="appointment-reminder"
+          class="appointment-reminder"
+          type="button"
+          title="查看今日預約"
+          aria-label="查看今日預約"
+          onclick="showTodayAppointmentList()"
+          hidden
+        >
+          <span aria-hidden="true">🔔</span>
+          <span id="appointment-reminder-count" class="appointment-reminder-count">0</span>
+        </button>
         <button
           id="auth-btn"
           class="btn"
           type="button"
           onclick="handleAuthButton()"
         >登入</button>
-
+        
         <button
           id="admin-reset-trigger"
           class="btn btn-sm"
@@ -54,7 +74,7 @@
   </main>
 
   <script src="/static/js/sweetalert2.all.min.js?v=20260607"></script>
-  <script src="/static/js/app.js?v=20261102"></script>
+  <script src="/static/js/app.js?v=20261124-1"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
